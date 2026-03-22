@@ -1,0 +1,3511 @@
+{
+  "totalColors": 221,
+  "inventory": [
+    {
+      "id": "A1",
+      "series": "A",
+      "hex": "#faf5cd",
+      "quantity": 814,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 17:01:53",
+          "type": "出库",
+          "quantity": 186,
+          "remark": "制作图纸: 皇帝"
+        },
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A2",
+      "series": "A",
+      "hex": "#fcfed6",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A3",
+      "series": "A",
+      "hex": "#fcff92",
+      "quantity": 986,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:35:40",
+          "type": "出库",
+          "quantity": 14,
+          "remark": "快捷出库"
+        },
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A4",
+      "series": "A",
+      "hex": "#f7ec5c",
+      "quantity": 786,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:35:49",
+          "type": "出库",
+          "quantity": 214,
+          "remark": "快捷出库"
+        },
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A5",
+      "series": "A",
+      "hex": "#f0d83a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A6",
+      "series": "A",
+      "hex": "#fda951",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A7",
+      "series": "A",
+      "hex": "#fa8c4f",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A8",
+      "series": "A",
+      "hex": "#fbda4d",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A9",
+      "series": "A",
+      "hex": "#f79d5f",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A10",
+      "series": "A",
+      "hex": "#f47e38",
+      "quantity": 1150,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 17:07:44",
+          "type": "入库",
+          "quantity": 150,
+          "remark": "补豆入库"
+        },
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A11",
+      "series": "A",
+      "hex": "#fedb99",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A12",
+      "series": "A",
+      "hex": "#fda276",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A13",
+      "series": "A",
+      "hex": "#fec667",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A14",
+      "series": "A",
+      "hex": "#f75842",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A15",
+      "series": "A",
+      "hex": "#fbf65e",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A16",
+      "series": "A",
+      "hex": "#feff97",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A17",
+      "series": "A",
+      "hex": "#fde173",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A18",
+      "series": "A",
+      "hex": "#fcbf80",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A19",
+      "series": "A",
+      "hex": "#fd7e77",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A20",
+      "series": "A",
+      "hex": "#f9d666",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A21",
+      "series": "A",
+      "hex": "#fae393",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A22",
+      "series": "A",
+      "hex": "#edf878",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A23",
+      "series": "A",
+      "hex": "#e4c8ba",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A24",
+      "series": "A",
+      "hex": "#f3f6a9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A25",
+      "series": "A",
+      "hex": "#fdf785",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "A26",
+      "series": "A",
+      "hex": "#ffc734",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B1",
+      "series": "B",
+      "hex": "#dff13b",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B2",
+      "series": "B",
+      "hex": "#64f343",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B3",
+      "series": "B",
+      "hex": "#a1f586",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B4",
+      "series": "B",
+      "hex": "#5fdf34",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B5",
+      "series": "B",
+      "hex": "#39e158",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B6",
+      "series": "B",
+      "hex": "#64e0a4",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B7",
+      "series": "B",
+      "hex": "#3eae7c",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B8",
+      "series": "B",
+      "hex": "#1d9b54",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B9",
+      "series": "B",
+      "hex": "#2a5037",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B10",
+      "series": "B",
+      "hex": "#9ad1ba",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B11",
+      "series": "B",
+      "hex": "#627032",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B12",
+      "series": "B",
+      "hex": "#1a6e3d",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B13",
+      "series": "B",
+      "hex": "#c8e87d",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B14",
+      "series": "B",
+      "hex": "#abe84f",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B15",
+      "series": "B",
+      "hex": "#305335",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B16",
+      "series": "B",
+      "hex": "#c0ed9c",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B17",
+      "series": "B",
+      "hex": "#9eb33e",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B18",
+      "series": "B",
+      "hex": "#e6ed4f",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B19",
+      "series": "B",
+      "hex": "#26b78e",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B20",
+      "series": "B",
+      "hex": "#cbeccf",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B21",
+      "series": "B",
+      "hex": "#18616a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B22",
+      "series": "B",
+      "hex": "#0a4241",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B23",
+      "series": "B",
+      "hex": "#343b1a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B24",
+      "series": "B",
+      "hex": "#e8faa6",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B25",
+      "series": "B",
+      "hex": "#4e846d",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B26",
+      "series": "B",
+      "hex": "#907c35",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B27",
+      "series": "B",
+      "hex": "#d0e0af",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B28",
+      "series": "B",
+      "hex": "#9ee5bb",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B29",
+      "series": "B",
+      "hex": "#c6df5f",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B30",
+      "series": "B",
+      "hex": "#e3fbb1",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B31",
+      "series": "B",
+      "hex": "#b4e691",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "B32",
+      "series": "B",
+      "hex": "#92ad60",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C1",
+      "series": "C",
+      "hex": "#f0fee4",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "series": "C",
+      "hex": "#abf8fe",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "series": "C",
+      "hex": "#a2e0f7",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "series": "C",
+      "hex": "#44cdfb",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "series": "C",
+      "hex": "#06aadf",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C6",
+      "series": "C",
+      "hex": "#54a7e9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "series": "C",
+      "hex": "#3977ca",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C8",
+      "series": "C",
+      "hex": "#0f52bd",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C9",
+      "series": "C",
+      "hex": "#3349c3",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C10",
+      "series": "C",
+      "hex": "#3cbce3",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C11",
+      "series": "C",
+      "hex": "#2aded3",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C12",
+      "series": "C",
+      "hex": "#1e334e",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C13",
+      "series": "C",
+      "hex": "#cde7fe",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C14",
+      "series": "C",
+      "hex": "#d5fcf7",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C15",
+      "series": "C",
+      "hex": "#21c5c4",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C16",
+      "series": "C",
+      "hex": "#1858a2",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C17",
+      "series": "C",
+      "hex": "#02d1f3",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C18",
+      "series": "C",
+      "hex": "#213244",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C19",
+      "series": "C",
+      "hex": "#18869d",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C20",
+      "series": "C",
+      "hex": "#1a70a9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C21",
+      "series": "C",
+      "hex": "#bcddfc",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C22",
+      "series": "C",
+      "hex": "#6bb1bb",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C23",
+      "series": "C",
+      "hex": "#c8e2fd",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C24",
+      "series": "C",
+      "hex": "#7ec5f9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C25",
+      "series": "C",
+      "hex": "#a9e8e0",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C26",
+      "series": "C",
+      "hex": "#42adcf",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C27",
+      "series": "C",
+      "hex": "#d0def9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C28",
+      "series": "C",
+      "hex": "#bdcee8",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "C29",
+      "series": "C",
+      "hex": "#364a89",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D1",
+      "series": "D",
+      "hex": "#acb7ef",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D2",
+      "series": "D",
+      "hex": "#868dd3",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D3",
+      "series": "D",
+      "hex": "#3554af",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D4",
+      "series": "D",
+      "hex": "#162d7b",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D5",
+      "series": "D",
+      "hex": "#b34ec6",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D6",
+      "series": "D",
+      "hex": "#b37bdc",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D7",
+      "series": "D",
+      "hex": "#8758a9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D8",
+      "series": "D",
+      "hex": "#e3d2fe",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D9",
+      "series": "D",
+      "hex": "#d5b9f4",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D10",
+      "series": "D",
+      "hex": "#301a49",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D11",
+      "series": "D",
+      "hex": "#beb9e2",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D12",
+      "series": "D",
+      "hex": "#dc99ce",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D13",
+      "series": "D",
+      "hex": "#b5038d",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D14",
+      "series": "D",
+      "hex": "#862993",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D15",
+      "series": "D",
+      "hex": "#2f1f8c",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D16",
+      "series": "D",
+      "hex": "#e2e4f0",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D17",
+      "series": "D",
+      "hex": "#c7d3f9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D18",
+      "series": "D",
+      "hex": "#9a64b8",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D19",
+      "series": "D",
+      "hex": "#d8c2d9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D20",
+      "series": "D",
+      "hex": "#9a35ad",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D21",
+      "series": "D",
+      "hex": "#940595",
+      "quantity": 887,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 17:01:53",
+          "type": "出库",
+          "quantity": 113,
+          "remark": "制作图纸: 皇帝"
+        },
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D22",
+      "series": "D",
+      "hex": "#38389a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D23",
+      "series": "D",
+      "hex": "#eadbf8",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D24",
+      "series": "D",
+      "hex": "#768ae1",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D25",
+      "series": "D",
+      "hex": "#4950c2",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "D26",
+      "series": "D",
+      "hex": "#d6c6eb",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E1",
+      "series": "E",
+      "hex": "#f6d4cb",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "series": "E",
+      "hex": "#fcc1dd",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E3",
+      "series": "E",
+      "hex": "#f6bde8",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E4",
+      "series": "E",
+      "hex": "#e8649e",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E5",
+      "series": "E",
+      "hex": "#f0569f",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E6",
+      "series": "E",
+      "hex": "#eb4172",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E7",
+      "series": "E",
+      "hex": "#c53674",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E8",
+      "series": "E",
+      "hex": "#fddbe9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E9",
+      "series": "E",
+      "hex": "#e376c7",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "series": "E",
+      "hex": "#d13b95",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E11",
+      "series": "E",
+      "hex": "#f7dad4",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E12",
+      "series": "E",
+      "hex": "#f693bf",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E13",
+      "series": "E",
+      "hex": "#b5026a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E14",
+      "series": "E",
+      "hex": "#fad4bf",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E15",
+      "series": "E",
+      "hex": "#f5c9ca",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E16",
+      "series": "E",
+      "hex": "#fbf4ec",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E17",
+      "series": "E",
+      "hex": "#f7e3ec",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E18",
+      "series": "E",
+      "hex": "#f9c8db",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E19",
+      "series": "E",
+      "hex": "#f6bbd1",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E20",
+      "series": "E",
+      "hex": "#d7c6ce",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E21",
+      "series": "E",
+      "hex": "#c09da4",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E22",
+      "series": "E",
+      "hex": "#b38c9f",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E23",
+      "series": "E",
+      "hex": "#937d8a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "E24",
+      "series": "E",
+      "hex": "#debee5",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F1",
+      "series": "F",
+      "hex": "#fe9381",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "series": "F",
+      "hex": "#f63d4b",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F3",
+      "series": "F",
+      "hex": "#ee4e3e",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F4",
+      "series": "F",
+      "hex": "#fb2a40",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F5",
+      "series": "F",
+      "hex": "#e10328",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F6",
+      "series": "F",
+      "hex": "#913635",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F7",
+      "series": "F",
+      "hex": "#911932",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F8",
+      "series": "F",
+      "hex": "#bb0126",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F9",
+      "series": "F",
+      "hex": "#e0677a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F10",
+      "series": "F",
+      "hex": "#874628",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F11",
+      "series": "F",
+      "hex": "#592323",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F12",
+      "series": "F",
+      "hex": "#f3536b",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F13",
+      "series": "F",
+      "hex": "#f45c45",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F14",
+      "series": "F",
+      "hex": "#fcadb2",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F15",
+      "series": "F",
+      "hex": "#d50527",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F16",
+      "series": "F",
+      "hex": "#f8c0a9",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F17",
+      "series": "F",
+      "hex": "#e89b7d",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F18",
+      "series": "F",
+      "hex": "#d07f4a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F19",
+      "series": "F",
+      "hex": "#be454a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F20",
+      "series": "F",
+      "hex": "#c69495",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F21",
+      "series": "F",
+      "hex": "#f2b8c6",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F22",
+      "series": "F",
+      "hex": "#f7c3d0",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F23",
+      "series": "F",
+      "hex": "#ed806c",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F24",
+      "series": "F",
+      "hex": "#e09daf",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "F25",
+      "series": "F",
+      "hex": "#e84854",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G1",
+      "series": "G",
+      "hex": "#ffe4d3",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G2",
+      "series": "G",
+      "hex": "#fcc6ac",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G3",
+      "series": "G",
+      "hex": "#f1c4a5",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G4",
+      "series": "G",
+      "hex": "#dcb387",
+      "quantity": 728,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 17:01:53",
+          "type": "出库",
+          "quantity": 171,
+          "remark": "制作图纸: 皇帝"
+        },
+        {
+          "time": "2026/03/01 16:35:59",
+          "type": "出库",
+          "quantity": 101,
+          "remark": "快捷出库"
+        },
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G5",
+      "series": "G",
+      "hex": "#e7b34e",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G6",
+      "series": "G",
+      "hex": "#e3a014",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G7",
+      "series": "G",
+      "hex": "#985c3a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G8",
+      "series": "G",
+      "hex": "#713d2f",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G9",
+      "series": "G",
+      "hex": "#e4b685",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G10",
+      "series": "G",
+      "hex": "#da8c42",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G11",
+      "series": "G",
+      "hex": "#dac898",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G12",
+      "series": "G",
+      "hex": "#fec993",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G13",
+      "series": "G",
+      "hex": "#b2714b",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G14",
+      "series": "G",
+      "hex": "#8b684c",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G15",
+      "series": "G",
+      "hex": "#f6f8e3",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G16",
+      "series": "G",
+      "hex": "#f2d8c1",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G17",
+      "series": "G",
+      "hex": "#77544e",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G18",
+      "series": "G",
+      "hex": "#ffe3d5",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G19",
+      "series": "G",
+      "hex": "#dd7d41",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G20",
+      "series": "G",
+      "hex": "#a5452f",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "G21",
+      "series": "G",
+      "hex": "#b38561",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H1",
+      "series": "H",
+      "hex": "#ffffff",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H2",
+      "series": "H",
+      "hex": "#fbfbfb",
+      "quantity": 5765,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:36:13",
+          "type": "出库",
+          "quantity": 235,
+          "remark": "快捷出库"
+        },
+        {
+          "time": "2026/03/01 16:34:17",
+          "type": "出库",
+          "quantity": 5000,
+          "remark": "快捷出库"
+        },
+        {
+          "time": "2026/03/01 16:34:02",
+          "type": "入库",
+          "quantity": 5000,
+          "remark": "快捷入库"
+        },
+        {
+          "time": "2026/03/01 16:34:02",
+          "type": "入库",
+          "quantity": 5000,
+          "remark": "快捷入库"
+        },
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H3",
+      "series": "H",
+      "hex": "#b4b4b4",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H4",
+      "series": "H",
+      "hex": "#878787",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H5",
+      "series": "H",
+      "hex": "#464648",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H6",
+      "series": "H",
+      "hex": "#2c2c2c",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H7",
+      "series": "H",
+      "hex": "#010101",
+      "quantity": 5700,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 17:01:53",
+          "type": "出库",
+          "quantity": 300,
+          "remark": "制作图纸: 皇帝"
+        },
+        {
+          "time": "2026/03/01 16:34:26",
+          "type": "入库",
+          "quantity": 5000,
+          "remark": "快捷入库"
+        },
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H8",
+      "series": "H",
+      "hex": "#e7d6dc",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H9",
+      "series": "H",
+      "hex": "#efedee",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H10",
+      "series": "H",
+      "hex": "#ebebeb",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H11",
+      "series": "H",
+      "hex": "#cdcdcd",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H12",
+      "series": "H",
+      "hex": "#fdf6ee",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H13",
+      "series": "H",
+      "hex": "#f4edf1",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H14",
+      "series": "H",
+      "hex": "#ced7d4",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H15",
+      "series": "H",
+      "hex": "#9aa6a6",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H16",
+      "series": "H",
+      "hex": "#1b1213",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H17",
+      "series": "H",
+      "hex": "#f0eeef",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H18",
+      "series": "H",
+      "hex": "#fcfff6",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H19",
+      "series": "H",
+      "hex": "#f2eee5",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H20",
+      "series": "H",
+      "hex": "#96a09f",
+      "quantity": 927,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 17:01:53",
+          "type": "出库",
+          "quantity": 73,
+          "remark": "制作图纸: 皇帝"
+        },
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H21",
+      "series": "H",
+      "hex": "#f8fbe6",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H22",
+      "series": "H",
+      "hex": "#cacad2",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "H23",
+      "series": "H",
+      "hex": "#9b9c94",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M1",
+      "series": "M",
+      "hex": "#bbc6b6",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M2",
+      "series": "M",
+      "hex": "#909994",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M3",
+      "series": "M",
+      "hex": "#697e81",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M4",
+      "series": "M",
+      "hex": "#e0d4bc",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M5",
+      "series": "M",
+      "hex": "#d1ccaf",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M6",
+      "series": "M",
+      "hex": "#b0aa86",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M7",
+      "series": "M",
+      "hex": "#b0a796",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M8",
+      "series": "M",
+      "hex": "#ae8082",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M9",
+      "series": "M",
+      "hex": "#a68862",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M10",
+      "series": "M",
+      "hex": "#c4b3bb",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M11",
+      "series": "M",
+      "hex": "#9d7693",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M12",
+      "series": "M",
+      "hex": "#644b51",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M13",
+      "series": "M",
+      "hex": "#c79266",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M14",
+      "series": "M",
+      "hex": "#c27563",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    },
+    {
+      "id": "M15",
+      "series": "M",
+      "hex": "#747d7a",
+      "quantity": 1000,
+      "status": "库存充足",
+      "history": [
+        {
+          "time": "2026/03/01 16:33:49",
+          "type": "入库",
+          "quantity": 1000,
+          "remark": "补豆入库"
+        }
+      ]
+    }
+  ],
+  "blueprints": [
+    {
+      "id": "1922c794-67e7-4dd3-aa09-4ba6a88b5bcc",
+      "name": "命苦牛牛",
+      "tag": "",
+      "source": "",
+      "date": "2026/03/01 17:01",
+      "image": "/uploads/10b37191170646529817699074e179a4.webp",
+      "status": "待拼",
+      "items": [
+        {
+          "id": "G16",
+          "quantity": 37
+        },
+        {
+          "id": "G10",
+          "quantity": 279
+        },
+        {
+          "id": "H22",
+          "quantity": 138
+        },
+        {
+          "id": "C6",
+          "quantity": 71
+        },
+        {
+          "id": "M9",
+          "quantity": 248
+        },
+        {
+          "id": "D9",
+          "quantity": 289
+        }
+      ]
+    },
+    {
+      "id": "97acae9f-e440-40c0-afa0-cd08108c05eb",
+      "name": "皇帝",
+      "tag": "",
+      "source": "",
+      "date": "2026/03/01 16:56",
+      "image": "/uploads/be57e40baa674db887b35e7af2508098.webp",
+      "status": "待拼",
+      "items": [
+        {
+          "id": "H20",
+          "quantity": 73
+        },
+        {
+          "id": "H7",
+          "quantity": 300
+        },
+        {
+          "id": "D21",
+          "quantity": 113
+        },
+        {
+          "id": "A1",
+          "quantity": 186
+        },
+        {
+          "id": "G4",
+          "quantity": 171
+        }
+      ]
+    },
+    {
+      "id": "27d9680c-ed11-4aa1-b58c-c22ab69ef07c",
+      "name": "桑启",
+      "tag": "",
+      "source": "",
+      "date": "2026/03/01 16:53",
+      "image": "/uploads/f1493a44ad8e4bf1be0d8c382a77f092.webp",
+      "status": "待拼",
+      "items": [
+        {
+          "id": "D8",
+          "quantity": 120
+        },
+        {
+          "id": "D11",
+          "quantity": 199
+        },
+        {
+          "id": "A5",
+          "quantity": 98
+        },
+        {
+          "id": "H16",
+          "quantity": 293
+        },
+        {
+          "id": "G13",
+          "quantity": 35
+        },
+        {
+          "id": "E23",
+          "quantity": 147
+        },
+        {
+          "id": "G17",
+          "quantity": 170
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.log
+build/
+dist/
+*.spec
+# 本地运行数据；演示/线上以 seed_data.json 为准，更新演示请复制覆盖 seed_data.json
+data.json
+uploads/
