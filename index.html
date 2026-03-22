@@ -569,7 +569,7 @@
                 getFullUrl(path) {
                     if(!path) return '';
                     if(path.startsWith('http') || path.startsWith('data:')) return path;
-                    return 'http://localhost:5000' + (path.startsWith('/') ? '' : '/') + path;
+                    return path.startsWith('/') ? path : '/' + path;
                 },
                 getContrastColor(hexcolor) {
                     if (!hexcolor) return '#1F2937';
@@ -580,7 +580,7 @@
                 },
                 getColorHex(id) { const item = this.data.inventory.find(i => i.id.toUpperCase() === id.toUpperCase()); return item ? item.hex : null; },
                 fetchData() {
-                    fetch('http://localhost:5000/api/inventory').then(res => res.json()).then(json => { 
+                    fetch('/api/inventory').then(res => res.json()).then(json => { 
                         this.data = json; 
                         if(this.activeItem) this.activeItem = this.data.inventory.find(i => i.id === this.activeItem.id);
                     });
@@ -670,7 +670,7 @@
                     if (!cropperInstance) return;
                     this.isAnalyzing = true;
                     const croppedBase64 = cropperInstance.getCroppedCanvas().toDataURL('image/jpeg');
-                    fetch('http://localhost:5000/api/analyze', {
+                    fetch('/api/analyze', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: croppedBase64 })
                     }).then(res => res.json()).then(res => {
                         if(res.status === 'success') {
@@ -686,26 +686,26 @@
                     const validItems = this.currentBp.items.filter(i => i.id.trim() !== '' && i.quantity !== '');
                     if (validItems.length === 0 && !this.currentBp.image) { alert("请至少上传图纸或填写一项色号！"); return; }
                     const payload = { ...this.currentBp, items: validItems };
-                    fetch('http://localhost:5000/api/blueprints/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                    fetch('/api/blueprints/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                     }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 图纸保存成功！'); this.showBlueprintModal = false; this.fetchData(); } });
                 },
                 deleteBlueprint() {
                     if(!confirm("确定要删除这张图纸吗？不可恢复哦！")) return;
-                    fetch('http://localhost:5000/api/blueprints/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: this.currentBp.id })
+                    fetch('/api/blueprints/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: this.currentBp.id })
                     }).then(res => res.json()).then(res => { if(res.status === 'success') { this.showBlueprintModal = false; this.fetchData(); } });
                 },
                 checkoutBlueprint(bp) {
                     if(!confirm(`确定要为《${bp.name}》消耗库存吗？`)) return;
-                    fetch('http://localhost:5000/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remark: `制作图纸: ${bp.name}`, items: bp.items })
+                    fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remark: `制作图纸: ${bp.name}`, items: bp.items })
                     }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 已成功根据图纸扣除库存！'); this.fetchData(); } });
                 },
 
                 toggleRecordSort(key) { if (this.recordSortKey === key) this.recordSortOrder = this.recordSortOrder === 'desc' ? 'asc' : 'desc'; else { this.recordSortKey = key; this.recordSortOrder = 'desc'; } },
-                confirmClearInventory() { fetch('http://localhost:5000/api/clear_inventory', { method: 'POST' }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🗑️ 已成功清空所有库存！'); this.showClearConfirmModal = false; this.fetchData(); } }); },
+                confirmClearInventory() { fetch('/api/clear_inventory', { method: 'POST' }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🗑️ 已成功清空所有库存！'); this.showClearConfirmModal = false; this.fetchData(); } }); },
                 openActionMenu(item) { this.activeItem = item; this.showActionMenu = true; }, openAdjustModal() { this.showActionMenu = false; this.adjustType = 'checkout'; this.adjustQty = ''; this.showAdjustModal = true; }, openDetailsModal() { this.showActionMenu = false; this.showDetailsModal = true; },
-                submitAdjust() { const qty = parseInt(this.adjustQty); if(isNaN(qty) || qty < 0) { alert("请输入正确的目标数字！"); return; } fetch('http://localhost:5000/api/adjust', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: this.activeItem.id, type: this.adjustType, quantity: qty }) }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 调整成功！'); this.showAdjustModal = false; this.fetchData(); } }); },
-                openCheckoutModal() { this.showCheckoutModal = true; this.checkoutRemark = ''; this.checkoutItems = [{ id: '', quantity: '' }, { id: '', quantity: '' }, { id: '', quantity: '' }]; }, addCheckoutRow() { this.checkoutItems.push({ id: '', quantity: '' }); }, removeCheckoutRow(index) { if (this.checkoutItems.length > 1) this.checkoutItems.splice(index, 1); else { this.checkoutItems[0].id = ''; this.checkoutItems[0].quantity = ''; } }, submitCheckout() { const validItems = this.checkoutItems.filter(item => item.id.trim() !== '' && item.quantity !== ''); if (validItems.length === 0) return alert("请至少填写一项完整的色号和数量！"); fetch('http://localhost:5000/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remark: this.checkoutRemark, items: validItems }) }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 出库成功！'); this.showCheckoutModal = false; this.fetchData(); } }); },
-                openCheckinModal() { this.showCheckinModal = true; this.checkinRemark = ''; this.checkinTab = 'batch'; this.checkinBatchItems = this.data.inventory.map(item => ({ id: item.id, quantity: '' })); this.checkinManualItems = [{ id: '', quantity: '' }, { id: '', quantity: '' }, { id: '', quantity: '' }]; }, addCheckinRow() { this.checkinManualItems.push({ id: '', quantity: '' }); }, removeCheckinRow(index) { if (this.checkinManualItems.length > 1) this.checkinManualItems.splice(index, 1); else { this.checkinManualItems[0].id = ''; this.checkinManualItems[0].quantity = ''; } }, addAmount(item, amount) { const currentQty = parseInt(item.quantity) || 0; item.quantity = currentQty + amount; }, addSetColors() { this.checkinBatchItems.forEach(item => { const currentQty = parseInt(item.quantity) || 0; item.quantity = currentQty + 1000; }); }, submitCheckin() { const activeItems = this.checkinTab === 'batch' ? this.checkinBatchItems : this.checkinManualItems; const validItems = activeItems.filter(item => { const id = String(item.id || '').trim(); const qty = String(item.quantity || '').trim(); return id !== '' && qty !== '' && !isNaN(qty) && parseInt(qty) > 0; }).map(item => ({ id: String(item.id).trim(), quantity: parseInt(item.quantity) })); if (validItems.length === 0) { alert("请至少填写一项有效的入库数量！"); return; } fetch('http://localhost:5000/api/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remark: this.checkinRemark, items: validItems }) }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 入库成功！'); this.showCheckinModal = false; this.fetchData(); } }); }
+                submitAdjust() { const qty = parseInt(this.adjustQty); if(isNaN(qty) || qty < 0) { alert("请输入正确的目标数字！"); return; } fetch('/api/adjust', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: this.activeItem.id, type: this.adjustType, quantity: qty }) }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 调整成功！'); this.showAdjustModal = false; this.fetchData(); } }); },
+                openCheckoutModal() { this.showCheckoutModal = true; this.checkoutRemark = ''; this.checkoutItems = [{ id: '', quantity: '' }, { id: '', quantity: '' }, { id: '', quantity: '' }]; }, addCheckoutRow() { this.checkoutItems.push({ id: '', quantity: '' }); }, removeCheckoutRow(index) { if (this.checkoutItems.length > 1) this.checkoutItems.splice(index, 1); else { this.checkoutItems[0].id = ''; this.checkoutItems[0].quantity = ''; } }, submitCheckout() { const validItems = this.checkoutItems.filter(item => item.id.trim() !== '' && item.quantity !== ''); if (validItems.length === 0) return alert("请至少填写一项完整的色号和数量！"); fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remark: this.checkoutRemark, items: validItems }) }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 出库成功！'); this.showCheckoutModal = false; this.fetchData(); } }); },
+                openCheckinModal() { this.showCheckinModal = true; this.checkinRemark = ''; this.checkinTab = 'batch'; this.checkinBatchItems = this.data.inventory.map(item => ({ id: item.id, quantity: '' })); this.checkinManualItems = [{ id: '', quantity: '' }, { id: '', quantity: '' }, { id: '', quantity: '' }]; }, addCheckinRow() { this.checkinManualItems.push({ id: '', quantity: '' }); }, removeCheckinRow(index) { if (this.checkinManualItems.length > 1) this.checkinManualItems.splice(index, 1); else { this.checkinManualItems[0].id = ''; this.checkinManualItems[0].quantity = ''; } }, addAmount(item, amount) { const currentQty = parseInt(item.quantity) || 0; item.quantity = currentQty + amount; }, addSetColors() { this.checkinBatchItems.forEach(item => { const currentQty = parseInt(item.quantity) || 0; item.quantity = currentQty + 1000; }); }, submitCheckin() { const activeItems = this.checkinTab === 'batch' ? this.checkinBatchItems : this.checkinManualItems; const validItems = activeItems.filter(item => { const id = String(item.id || '').trim(); const qty = String(item.quantity || '').trim(); return id !== '' && qty !== '' && !isNaN(qty) && parseInt(qty) > 0; }).map(item => ({ id: String(item.id).trim(), quantity: parseInt(item.quantity) })); if (validItems.length === 0) { alert("请至少填写一项有效的入库数量！"); return; } fetch('/api/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remark: this.checkinRemark, items: validItems }) }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 入库成功！'); this.showCheckinModal = false; this.fetchData(); } }); }
             },
             mounted() { this.fetchData(); }
         }).mount('#app')
