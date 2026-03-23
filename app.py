@@ -6,7 +6,7 @@ import shutil
 import sys
 import random
 import uuid
-import base64
+import time
 from datetime import datetime
 import webbrowser
 from threading import Timer
@@ -285,6 +285,7 @@ def load_data():
         for item in data.get('inventory', []):
             if 'history' not in item: item['history'] = []
         if 'blueprints' not in data: data['blueprints'] = []
+        ensure_visit_fields(data)
         return data
 
 def save_data(data):
@@ -293,6 +294,33 @@ def save_data(data):
 
 def get_now():
     return datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+
+def ensure_visit_fields(data):
+    if 'visit_stats' not in data:
+        data['visit_stats'] = {
+            "totalVisits": 0,
+            "uniqueVisitors": 0,
+            "totalDurationSeconds": 0
+        }
+    if 'visitor_counts' not in data:
+        data['visitor_counts'] = {}
+    if 'visit_records' not in data:
+        data['visit_records'] = []
+    if 'active_visits' not in data:
+        data['active_visits'] = {}
+    return data
+
+def get_client_ip():
+    forwarded = request.headers.get('X-Forwarded-For', '')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.remote_addr or ''
+
+def append_visit_record(data, record):
+    data['visit_records'].insert(0, record)
+    max_records = 1000
+    if len(data['visit_records']) > max_records:
+        data['visit_records'] = data['visit_records'][:max_records]
 
 # ================= 新增：让后端直接发送前端网页 =================
 @app.route('/')
@@ -307,6 +335,115 @@ def custom_static(filename):
 @app.route('/api/inventory', methods=['GET'])
 def get_inventory():
     return jsonify(load_data())
+
+@app.route('/api/visit/start', methods=['POST'])
+def visit_start():
+    data = load_data()
+    ensure_visit_fields(data)
+    req = request.get_json(silent=True) or {}
+
+    session_id = str(req.get('sessionId') or '').strip()
+    visitor_id = str(req.get('visitorId') or '').strip()
+    page = str(req.get('page') or '/').strip()
+    user_agent = request.headers.get('User-Agent', '')
+    ip = get_client_ip()
+
+    if not session_id:
+        session_id = uuid.uuid4().hex
+    if not visitor_id:
+        visitor_id = f"{ip}|{user_agent[:80]}"
+
+    now_ts = int(time.time())
+    now_text = get_now()
+
+    if session_id not in data['active_visits']:
+        data['visit_stats']['totalVisits'] += 1
+        if visitor_id not in data['visitor_counts']:
+            data['visit_stats']['uniqueVisitors'] += 1
+            data['visitor_counts'][visitor_id] = 0
+        data['visitor_counts'][visitor_id] += 1
+
+    data['active_visits'][session_id] = {
+        "sessionId": session_id,
+        "visitorId": visitor_id,
+        "ip": ip,
+        "userAgent": user_agent,
+        "page": page,
+        "startAt": now_text,
+        "startAtTs": now_ts,
+        "lastSeenTs": now_ts
+    }
+
+    append_visit_record(data, {
+        "type": "start",
+        "time": now_text,
+        "sessionId": session_id,
+        "visitorId": visitor_id,
+        "ip": ip,
+        "page": page
+    })
+    save_data(data)
+    return jsonify({"status": "success", "sessionId": session_id})
+
+@app.route('/api/visit/end', methods=['POST'])
+def visit_end():
+    data = load_data()
+    ensure_visit_fields(data)
+    req = request.get_json(silent=True) or {}
+
+    session_id = str(req.get('sessionId') or '').strip()
+    duration_seconds = req.get('durationSeconds', 0)
+    try:
+        duration_seconds = max(0, int(duration_seconds))
+    except (ValueError, TypeError):
+        duration_seconds = 0
+
+    now_ts = int(time.time())
+    now_text = get_now()
+
+    active = data['active_visits'].pop(session_id, None) if session_id else None
+    if active:
+        if duration_seconds <= 0:
+            duration_seconds = max(0, now_ts - int(active.get('startAtTs', now_ts)))
+        visitor_id = active.get('visitorId', '')
+        ip = active.get('ip', '')
+        page = active.get('page', '/')
+    else:
+        visitor_id = str(req.get('visitorId') or '').strip()
+        ip = get_client_ip()
+        page = str(req.get('page') or '/').strip()
+
+    data['visit_stats']['totalDurationSeconds'] += duration_seconds
+    append_visit_record(data, {
+        "type": "end",
+        "time": now_text,
+        "sessionId": session_id,
+        "visitorId": visitor_id,
+        "ip": ip,
+        "page": page,
+        "durationSeconds": duration_seconds
+    })
+    save_data(data)
+    return jsonify({"status": "success"})
+
+@app.route('/api/visit/stats', methods=['GET'])
+def visit_stats():
+    data = load_data()
+    ensure_visit_fields(data)
+    stats = data['visit_stats']
+    total_visits = max(1, int(stats.get('totalVisits', 0)))
+    avg_duration = int(stats.get('totalDurationSeconds', 0) / total_visits)
+    return jsonify({
+        "status": "success",
+        "stats": {
+            "totalVisits": int(stats.get('totalVisits', 0)),
+            "uniqueVisitors": int(stats.get('uniqueVisitors', 0)),
+            "totalDurationSeconds": int(stats.get('totalDurationSeconds', 0)),
+            "avgDurationSeconds": avg_duration,
+            "activeSessions": len(data.get('active_visits', {}))
+        },
+        "records": data.get('visit_records', [])[:100]
+    })
 
 @app.route('/api/checkout', methods=['POST'])
 def checkout():
@@ -396,17 +533,9 @@ def save_blueprint():
     bp_id = req.get('id')
     image_data = req.get('image', '')
     
+    # 线上部署(如 Render)磁盘可能会被回收，保存成 data URL 可确保跨用户可见
     if image_data.startswith('data:image'):
-        try:
-            header, encoded = image_data.split(",", 1)
-            file_ext = header.split(";")[0].split("/")[1]
-            filename = f"{uuid.uuid4().hex}.{file_ext}"
-            filepath = os.path.join(UPLOAD_FOLDER, filename)
-            with open(filepath, "wb") as fh:
-                fh.write(base64.b64decode(encoded))
-            image_data = f"/uploads/{filename}"
-        except Exception as e:
-            pass
+        pass
     
     blueprint_obj = {
         "id": bp_id if bp_id else str(uuid.uuid4()),
