@@ -87,6 +87,40 @@
                 <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm"><div class="text-sm font-bold text-gray-500 mb-1">图纸数</div><div class="text-3xl font-extrabold text-gray-800">{{ bpStats.total }}</div></div>
             </div>
 
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-8">
+                <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h2 class="text-lg font-bold text-gray-800">出入库记录</h2>
+                    <div class="flex space-x-1 bg-gray-200/50 p-1 rounded-lg">
+                        <button @click="recordTypeFilter = 'all'" :class="['px-4 py-1.5 rounded-md text-sm font-bold transition', recordTypeFilter === 'all' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700']">全部</button>
+                        <button @click="recordTypeFilter = '入库'" :class="['px-4 py-1.5 rounded-md text-sm font-bold transition', recordTypeFilter === '入库' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700']">入库</button>
+                        <button @click="recordTypeFilter = '出库'" :class="['px-4 py-1.5 rounded-md text-sm font-bold transition', recordTypeFilter === '出库' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700']">出库</button>
+                    </div>
+                </div>
+                <div class="p-4 space-y-3 max-h-[520px] overflow-y-auto custom-scrollbar bg-gray-50/30">
+                    <div v-if="groupedRecordLogs.length === 0" class="py-16 text-center text-gray-400 font-medium">当前条件下暂无记录</div>
+                    <div v-for="record in groupedRecordLogs" :key="record.id" class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                        <div class="p-4 flex items-center justify-between cursor-pointer" @click="toggleGroupedRecord(record.id)">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span :class="['px-2 py-0.5 rounded-full text-xs font-bold border', record.type === '入库' ? 'text-teal-600 border-teal-200 bg-teal-50' : 'text-orange-500 border-orange-200 bg-orange-50']">{{ record.type }}</span>
+                                    <span class="text-sm font-bold text-gray-800 truncate">{{ record.remark || (record.type === '入库' ? '补豆入库' : '手动出库') }}</span>
+                                </div>
+                                <div class="text-xs text-gray-400 font-medium">🕒 {{ record.time }} · 色号数 {{ record.items.length }} · 总数量 {{ record.totalQty.toLocaleString() }}</div>
+                            </div>
+                            <button class="border border-gray-200 text-gray-500 bg-white px-3 py-1 rounded-full text-xs font-bold hover:bg-gray-50 transition">{{ expandedRecordIds[record.id] ? '收起 ^' : '展开 v' }}</button>
+                        </div>
+                        <div v-if="expandedRecordIds[record.id]" class="border-t border-gray-100 p-3 bg-gray-50/50">
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                <div v-for="item in record.items" :key="item.id" class="bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-center justify-between">
+                                    <span class="font-bold text-gray-700">{{ item.id }}</span>
+                                    <span :class="['text-sm font-bold', record.type === '入库' ? 'text-teal-600' : 'text-orange-500']">{{ item.quantity }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                     <h2 class="text-lg font-bold text-gray-800">色号消耗排名 <span class="text-xs font-normal text-gray-400 ml-2">(仅显示有出库的色号)</span></h2>
@@ -436,6 +470,7 @@
                     showCheckinModal: false, checkinTab: 'batch', checkinRemark: '', checkinBatchItems: [], checkinManualItems: [{ id: '', quantity: '' }, { id: '', quantity: '' }, { id: '', quantity: '' }],
 
                     recordTimeFilter: 'all', recordSortKey: 'outQty', recordSortOrder: 'desc',
+                    recordTypeFilter: 'all', expandedRecordIds: {},
 
                     bpFilter: '全部', bpSearch: '', showBlueprintModal: false, showCropModal: false, isAnalyzing: false, aiStatusMessage: '',
                     currentBp: { id: '', name: '', tag: '', source: '', date: '', image: '', items: [] },
@@ -494,6 +529,50 @@
                         return a.id.localeCompare(b.id);
                     });
                     return { totalIn, totalOut, inCount, outCount, rankData };
+                },
+                groupedRecordLogs() {
+                    const now = Date.now();
+                    const daysMap = { '7days': 7, '30days': 30, 'all': 99999 };
+                    const msLimit = daysMap[this.recordTimeFilter] * 24 * 60 * 60 * 1000;
+                    const merged = {};
+
+                    (this.data.inventory || []).forEach(item => {
+                        (item.history || []).forEach(log => {
+                            if (!log || !log.time || !log.type) return;
+                            if (this.recordTypeFilter !== 'all' && log.type !== this.recordTypeFilter) return;
+
+                            const logTs = new Date(log.time).getTime();
+                            if (!isNaN(logTs) && now - logTs > msLimit) return;
+
+                            const remark = log.remark || '';
+                            const key = `${log.type}|${log.time}|${remark}`;
+                            if (!merged[key]) {
+                                merged[key] = {
+                                    id: key,
+                                    type: log.type,
+                                    time: log.time,
+                                    remark,
+                                    totalQty: 0,
+                                    ts: isNaN(logTs) ? 0 : logTs,
+                                    items: []
+                                };
+                            }
+
+                            const qty = parseInt(log.quantity) || 0;
+                            merged[key].totalQty += qty;
+                            merged[key].items.push({
+                                id: item.id,
+                                quantity: qty
+                            });
+                        });
+                    });
+
+                    const result = Object.values(merged).map(group => {
+                        group.items.sort((a, b) => a.id.localeCompare(b.id));
+                        return group;
+                    });
+                    result.sort((a, b) => b.ts - a.ts);
+                    return result;
                 },
                 bpStats() {
                     const bps = this.data.blueprints || [];
@@ -690,6 +769,9 @@
 
                 // 蓝图常规操作
                 getBpTotalBeads(items) { return items.reduce((s, i) => s + (parseInt(i.quantity)||0), 0); },
+                toggleGroupedRecord(id) {
+                    this.expandedRecordIds[id] = !this.expandedRecordIds[id];
+                },
                 openBlueprintModal(bp = null) {
                     this.aiStatusMessage = '';
                     if (bp) { this.currentBp = JSON.parse(JSON.stringify(bp)); } 
