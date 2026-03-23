@@ -447,7 +447,12 @@
                     includeFinishedBps: true,
                     bpSelections: {}, // 格式: { '图纸ID': 份数 }
                     calcSortKey: 'needed',
-                    calcSortOrder: 'desc'
+                    calcSortOrder: 'desc',
+
+                    // 访问统计上报
+                    visitorId: '',
+                    visitSessionId: '',
+                    visitStartedAt: 0
                 }
             },
             computed: {
@@ -585,6 +590,53 @@
                         if(this.activeItem) this.activeItem = this.data.inventory.find(i => i.id === this.activeItem.id);
                     });
                 },
+                getOrCreateVisitorId() {
+                    const key = 'pingdou_visitor_id';
+                    let id = localStorage.getItem(key);
+                    if (!id) {
+                        id = 'v_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+                        localStorage.setItem(key, id);
+                    }
+                    return id;
+                },
+                startVisitTracking() {
+                    this.visitorId = this.getOrCreateVisitorId();
+                    this.visitSessionId = 's_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+                    this.visitStartedAt = Date.now();
+                    fetch('/api/visit/start', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            visitorId: this.visitorId,
+                            sessionId: this.visitSessionId,
+                            page: window.location.pathname
+                        })
+                    }).catch(() => {});
+                },
+                endVisitTracking() {
+                    if (!this.visitSessionId || !this.visitStartedAt) return;
+                    const durationSeconds = Math.max(1, Math.round((Date.now() - this.visitStartedAt) / 1000));
+                    const payload = {
+                        visitorId: this.visitorId,
+                        sessionId: this.visitSessionId,
+                        page: window.location.pathname,
+                        durationSeconds
+                    };
+                    const body = JSON.stringify(payload);
+                    if (navigator.sendBeacon) {
+                        const blob = new Blob([body], { type: 'application/json' });
+                        navigator.sendBeacon('/api/visit/end', blob);
+                    } else {
+                        fetch('/api/visit/end', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body,
+                            keepalive: true
+                        }).catch(() => {});
+                    }
+                    this.visitSessionId = '';
+                    this.visitStartedAt = 0;
+                },
                 
                 // ================= 消耗计算方法 =================
                 openCalcSelection() {
@@ -707,7 +759,17 @@
                 openCheckoutModal() { this.showCheckoutModal = true; this.checkoutRemark = ''; this.checkoutItems = [{ id: '', quantity: '' }, { id: '', quantity: '' }, { id: '', quantity: '' }]; }, addCheckoutRow() { this.checkoutItems.push({ id: '', quantity: '' }); }, removeCheckoutRow(index) { if (this.checkoutItems.length > 1) this.checkoutItems.splice(index, 1); else { this.checkoutItems[0].id = ''; this.checkoutItems[0].quantity = ''; } }, submitCheckout() { const validItems = this.checkoutItems.filter(item => item.id.trim() !== '' && item.quantity !== ''); if (validItems.length === 0) return alert("请至少填写一项完整的色号和数量！"); fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remark: this.checkoutRemark, items: validItems }) }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 出库成功！'); this.showCheckoutModal = false; this.fetchData(); } }); },
                 openCheckinModal() { this.showCheckinModal = true; this.checkinRemark = ''; this.checkinTab = 'batch'; this.checkinBatchItems = this.data.inventory.map(item => ({ id: item.id, quantity: '' })); this.checkinManualItems = [{ id: '', quantity: '' }, { id: '', quantity: '' }, { id: '', quantity: '' }]; }, addCheckinRow() { this.checkinManualItems.push({ id: '', quantity: '' }); }, removeCheckinRow(index) { if (this.checkinManualItems.length > 1) this.checkinManualItems.splice(index, 1); else { this.checkinManualItems[0].id = ''; this.checkinManualItems[0].quantity = ''; } }, addAmount(item, amount) { const currentQty = parseInt(item.quantity) || 0; item.quantity = currentQty + amount; }, addSetColors() { this.checkinBatchItems.forEach(item => { const currentQty = parseInt(item.quantity) || 0; item.quantity = currentQty + 1000; }); }, submitCheckin() { const activeItems = this.checkinTab === 'batch' ? this.checkinBatchItems : this.checkinManualItems; const validItems = activeItems.filter(item => { const id = String(item.id || '').trim(); const qty = String(item.quantity || '').trim(); return id !== '' && qty !== '' && !isNaN(qty) && parseInt(qty) > 0; }).map(item => ({ id: String(item.id).trim(), quantity: parseInt(item.quantity) })); if (validItems.length === 0) { alert("请至少填写一项有效的入库数量！"); return; } fetch('/api/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ remark: this.checkinRemark, items: validItems }) }).then(res => res.json()).then(res => { if(res.status === 'success') { alert('🎉 入库成功！'); this.showCheckinModal = false; this.fetchData(); } }); }
             },
-            mounted() { this.fetchData(); }
+            mounted() {
+                this.fetchData();
+                this.startVisitTracking();
+                window.addEventListener('beforeunload', this.endVisitTracking);
+                window.addEventListener('pagehide', this.endVisitTracking);
+            },
+            beforeUnmount() {
+                window.removeEventListener('beforeunload', this.endVisitTracking);
+                window.removeEventListener('pagehide', this.endVisitTracking);
+                this.endVisitTracking();
+            }
         }).mount('#app')
     </script>
 </body>
