@@ -11,6 +11,7 @@ import os
 import re
 import secrets
 import smtplib
+import threading
 import uuid
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
@@ -166,6 +167,8 @@ class VisitDaily(db.Model):
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 SAFE_STATUS = {"待拼", "拼制中", "已拼", "已发布"}
 RATE_BUCKETS: dict[str, list[datetime]] = {}
+OCR_ENGINE = None
+OCR_LOCK = threading.Lock()
 
 
 def json_body() -> dict[str, Any]:
@@ -304,11 +307,11 @@ def decode_data_image(value: str) -> tuple[bytes | None, str | None]:
 def compress_image(raw: bytes) -> tuple[bytes, str]:
     with Image.open(io.BytesIO(raw)) as source:
         image = ImageOps.exif_transpose(source).convert("RGBA")
-        image.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
+        image.thumbnail((1400, 1400), Image.Resampling.LANCZOS)
         canvas = Image.new("RGB", image.size, "white")
         canvas.paste(image, mask=image.getchannel("A"))
         output = io.BytesIO()
-        canvas.save(output, format="WEBP", quality=86, method=6)
+        canvas.save(output, format="WEBP", quality=84, method=4)
         return output.getvalue(), "image/webp"
 
 
@@ -417,7 +420,7 @@ def health():
     db.session.execute(db.select(func.count(User.id))).scalar()
     durable = bool(os.getenv("DATABASE_URL"))
     return jsonify({"status": "ok", "database": "postgresql" if durable else "sqlite", "durable": durable,
-                    "version": os.getenv("APP_VERSION", "2.1.0")})
+                    "version": os.getenv("APP_VERSION", "2.2.0")})
 
 
 @app.get("/api/session")
@@ -520,11 +523,11 @@ def guest_login():
     source = User.query.filter_by(email=owner_email).first() if owner_email else None
     source = source or User.query.filter_by(is_admin=True).order_by(User.id).first()
     if not source:
-        return jsonify({"error": "游客演示数据暂未准备好"}), 503
+        return jsonify({"error": "游客模式暂未准备好，请稍后再试"}), 503
     guest_id = uuid.uuid4().hex
     settings = dict(source.settings)
     settings.update({"demoGuest": True, "expiresAt": (utcnow() + timedelta(hours=24)).isoformat()})
-    guest = User(email=f"guest+{guest_id}@demo.local", username="游客体验账号",
+    guest = User(email=f"guest+{guest_id}@demo.local", username="游客模式",
                  password_hash=generate_password_hash(secrets.token_urlsafe(32)), settings_json=json.dumps(settings))
     db.session.add(guest)
     db.session.flush()
@@ -819,6 +822,18 @@ def blueprint_list(user: User):
 @app.post("/api/blueprints")
 @login_required
 def create_blueprint(user: User):
+    request_key = str((request.form if request.form else json_body()).get("requestKey", "")).strip()[:64]
+    if request_key and re.fullmatch(r"[a-zA-Z0-9_-]{12,64}", request_key):
+        prior_logs = AuditLog.query.filter_by(user_id=user.id, action="blueprint.create").order_by(AuditLog.id.desc()).limit(30).all()
+        for log in prior_logs:
+            try:
+                detail = json.loads(log.detail_json or "{}")
+            except json.JSONDecodeError:
+                continue
+            if detail.get("requestKey") == request_key:
+                existing = Blueprint.query.filter_by(id=detail.get("id"), user_id=user.id).first()
+                if existing:
+                    return jsonify({"item": serialize_blueprint(existing, True), "duplicate": True}), 200
     try:
         payload, items, pattern, image_data, image_mime = parse_blueprint_payload()
     except (ValueError, json.JSONDecodeError) as error:
@@ -836,7 +851,7 @@ def create_blueprint(user: User):
     db.session.add(bp)
     db.session.flush()
     replace_blueprint_items(bp, items)
-    audit("blueprint.create", {"id": bp.id, "name": bp.name})
+    audit("blueprint.create", {"id": bp.id, "name": bp.name, "requestKey": request_key})
     db.session.commit()
     return jsonify({"item": serialize_blueprint(bp, True)}), 201
 
@@ -893,6 +908,19 @@ def blueprint_image(blueprint_id: str):
     user = current_user()
     if not bp.share_token and (not user or user.id != bp.user_id):
         return Response(status=403)
+    if request.args.get("fit") == "subject":
+        try:
+            with Image.open(io.BytesIO(bp.image_data)) as source:
+                fitted, _meta = isolate_subject(source, 4)
+                fitted.thumbnail((1400, 1000), Image.Resampling.LANCZOS)
+                canvas = Image.new("RGB", fitted.size, "white")
+                canvas.paste(fitted, mask=fitted.getchannel("A") if fitted.mode == "RGBA" else None)
+                output = io.BytesIO()
+                canvas.save(output, format="WEBP", quality=86, method=3)
+                output.seek(0)
+                return send_file(output, mimetype="image/webp", max_age=86400)
+        except (OSError, ValueError):
+            pass
     return send_file(io.BytesIO(bp.image_data), mimetype=bp.image_mime or "image/webp", max_age=3600)
 
 
@@ -1143,6 +1171,58 @@ def isolate_subject(image: Image.Image, margin_percent: int = 8) -> tuple[Image.
                      "marginPercent": margin_percent}
 
 
+def parse_legend_ocr(texts: list[str], boxes: Any, valid_codes: set[str]) -> list[dict[str, Any]]:
+    tokens = []
+    for text_value, box in zip(texts, boxes):
+        text_value = str(text_value).strip().upper().replace(" ", "")
+        center_x = sum(float(point[0]) for point in box) / len(box)
+        center_y = sum(float(point[1]) for point in box) / len(box)
+        width = max(float(point[0]) for point in box) - min(float(point[0]) for point in box)
+        height = max(float(point[1]) for point in box) - min(float(point[1]) for point in box)
+        tokens.append({"text": text_value, "x": center_x, "y": center_y, "width": width, "height": height})
+    codes = [token for token in tokens if token["text"] in valid_codes]
+    numbers = [token for token in tokens if re.fullmatch(r"\d{1,6}", token["text"])]
+    candidates = []
+    for code in codes:
+        matches = [number for number in numbers if number["x"] > code["x"] + code["width"] * .4
+                   and abs(number["y"] - code["y"]) <= max(28, code["height"] * 1.25)
+                   and number["x"] - code["x"] < 420]
+        if matches:
+            number = min(matches, key=lambda item: (abs(item["y"] - code["y"]), item["x"] - code["x"]))
+            candidates.append({"code": code, "number": number})
+    groups: dict[tuple[int, int], list[dict[str, Any]]] = {}
+    for pair in candidates:
+        key = (round(pair["code"]["x"] / 55), round(pair["number"]["x"] / 55))
+        groups.setdefault(key, []).append(pair)
+    if not groups:
+        return []
+    best = max(groups.values(), key=lambda group: (len({item["code"]["text"] for item in group}),
+                                                     sum(item["code"]["x"] for item in group) / len(group)))
+    unique: dict[str, dict[str, Any]] = {}
+    for pair in sorted(best, key=lambda item: item["code"]["y"]):
+        code, quantity = pair["code"]["text"], int(pair["number"]["text"])
+        if quantity > 0 and code not in unique:
+            unique[code] = {"id": code, "quantity": quantity}
+    return list(unique.values()) if len(unique) >= 2 else []
+
+
+def extract_legend_items(image: Image.Image) -> list[dict[str, Any]]:
+    global OCR_ENGINE
+    from rapidocr import RapidOCR
+    import numpy as np
+
+    prepared = ImageOps.exif_transpose(image).convert("RGB")
+    prepared.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+    with OCR_LOCK:
+        if OCR_ENGINE is None:
+            OCR_ENGINE = RapidOCR()
+        ocr_result = OCR_ENGINE(np.asarray(prepared))
+    if not ocr_result or not ocr_result.txts:
+        return []
+    valid_codes = {row.code for row in PaletteColor.query.all()}
+    return parse_legend_ocr(list(ocr_result.txts), ocr_result.boxes, valid_codes)
+
+
 @app.post("/api/analyze")
 @login_required
 def analyze(user: User):
@@ -1152,6 +1232,7 @@ def analyze(user: User):
     if not upload or not upload.filename:
         return jsonify({"error": "请选择图片"}), 400
     try:
+        recognition_mode = request.form.get("recognitionMode", "pattern")
         columns = min(max(int(request.form.get("columns", 48)), 8), 128)
         requested_rows = int(request.form.get("rows", 0))
         max_colors = int(request.form.get("maxColors", 0)) or None
@@ -1159,18 +1240,35 @@ def analyze(user: User):
         with Image.open(upload.stream) as image:
             if image.width * image.height > 30_000_000:
                 return jsonify({"error": "图片像素过大"}), 400
-            crop_mode = request.form.get("cropMode", "subject")
-            margin_percent = min(max(int(request.form.get("cropMargin", 8)), 0), 25)
-            prepared, crop = isolate_subject(image, margin_percent) if crop_mode == "subject" else (
-                ImageOps.exif_transpose(image).convert("RGBA"), {"mode": "full", "applied": False})
-            rows = min(max(requested_rows or round(columns * prepared.height / prepared.width), 8), 128)
-            result = quantize_pattern(prepared, columns, rows, request.form.get("dither") == "true", max_colors)
-            result["crop"] = crop
+            if recognition_mode == "legend":
+                try:
+                    legend_items = extract_legend_items(image)
+                except Exception:
+                    app.logger.exception("Legend OCR failed")
+                    return jsonify({"error": "图例识别暂时不可用，请稍后重试或改用“只有图案”识别"}), 503
+                if not legend_items:
+                    return jsonify({"error": "没有读到完整图例，请确认图例中同时包含色号和数量，或改用“只有图案”识别"}), 422
+                colors = {row.code: row.hex_value for row in PaletteColor.query.all()}
+                result = {"recognitionMode": "legend", "columns": 0, "rows": 0, "cells": [], "hex": [],
+                          "items": [{**item, "hex": colors[item["id"]]} for item in legend_items],
+                          "crop": {"mode": "legend", "applied": False}}
+                rows = 0
+            else:
+                crop_mode = request.form.get("cropMode", "subject")
+                margin_percent = min(max(int(request.form.get("cropMargin", 8)), 0), 25)
+                prepared, crop = isolate_subject(image, margin_percent) if crop_mode == "subject" else (
+                    ImageOps.exif_transpose(image).convert("RGBA"), {"mode": "full", "applied": False})
+                rows = min(max(requested_rows or round(columns * prepared.height / prepared.width), 8), 128)
+                result = quantize_pattern(prepared, columns, rows, request.form.get("dither") == "true", max_colors)
+                result["recognitionMode"] = "pattern"
+                result["crop"] = crop
     except (ValueError, OSError) as error:
         return jsonify({"error": f"无法识别图片：{error}"}), 400
-    audit("ai.quantize", {"columns": columns, "rows": rows, "colors": len(result["items"]), "crop": result["crop"]})
+    audit("ai.quantize", {"mode": result["recognitionMode"], "columns": columns, "rows": rows,
+                           "colors": len(result["items"]), "crop": result["crop"]})
     db.session.commit()
-    return jsonify({"status": "ok", "result": result, "message": "已完成色卡匹配，请确认后再保存或扣库存"})
+    message = "已从图例读取色号和数量，请核对后保存" if result["recognitionMode"] == "legend" else "已识别图案用色和数量，请核对后保存"
+    return jsonify({"status": "ok", "result": result, "message": message})
 
 
 @app.post("/api/pattern/export.png")

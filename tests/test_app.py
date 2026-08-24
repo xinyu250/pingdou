@@ -2,6 +2,7 @@ import io
 import os
 import unittest
 import uuid
+from unittest.mock import patch
 
 from PIL import Image
 
@@ -9,7 +10,7 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["APP_SECRET"] = "test-secret-only"
 os.environ["APP_ENV"] = "development"
 
-from app import RATE_BUCKETS, User, app, db  # noqa: E402
+from app import RATE_BUCKETS, User, app, db, parse_legend_ocr  # noqa: E402
 
 
 class ProductionFlowTest(unittest.TestCase):
@@ -125,6 +126,48 @@ class ProductionFlowTest(unittest.TestCase):
         self.assertGreater(result["crop"]["box"][0], 24)
         self.assertGreater(result["rows"], 11)  # full image would be 16x11; square subject keeps its own ratio
         self.assertTrue(any(cell is None for cell in result["cells"]))
+
+    def test_legend_ocr_mode_returns_direct_color_counts(self):
+        image = Image.new("RGB", (320, 180), "white")
+        image_bytes = io.BytesIO()
+        image.save(image_bytes, "PNG")
+        image_bytes.seek(0)
+        recognized = [{"id": "A5", "quantity": 98}, {"id": "D11", "quantity": 199}]
+        with patch("app.extract_legend_items", return_value=recognized):
+            response = self.client.post("/api/analyze", headers=self.headers, data={
+                "recognitionMode": "legend", "image": (image_bytes, "legend.png"),
+            }, content_type="multipart/form-data")
+        self.assertEqual(response.status_code, 200, response.get_json())
+        result = response.get_json()["result"]
+        self.assertEqual(result["recognitionMode"], "legend")
+        self.assertEqual(result["cells"], [])
+        self.assertEqual([(item["id"], item["quantity"]) for item in result["items"]],
+                         [("A5", 98), ("D11", 199)])
+
+    def test_legend_parser_selects_legend_column_instead_of_grid_text(self):
+        def box(x, y, width=30, height=18):
+            return [[x, y], [x + width, y], [x + width, y + height], [x, y + height]]
+
+        texts = ["H2", "H7", "A5", "98", "D11", "199", "E23", "147"]
+        boxes = [box(100, 40), box(150, 40), box(800, 80), box(940, 80),
+                 box(800, 130), box(940, 130), box(800, 180), box(940, 180)]
+        items = parse_legend_ocr(texts, boxes, {"H2", "H7", "A5", "D11", "E23"})
+        self.assertEqual(items, [{"id": "A5", "quantity": 98}, {"id": "D11", "quantity": 199},
+                                 {"id": "E23", "quantity": 147}])
+
+    def test_blueprint_create_request_key_prevents_duplicate_saves(self):
+        request_key = f"save-{uuid.uuid4()}"
+        payload = {"name": "防重复图纸", "items": '[{"id":"A1","quantity":12}]',
+                   "pattern": "{}", "requestKey": request_key}
+        first = self.client.post("/api/blueprints", headers=self.headers, data=payload)
+        second = self.client.post("/api/blueprints", headers=self.headers, data=payload)
+        self.assertEqual(first.status_code, 201, first.get_json())
+        self.assertEqual(second.status_code, 200, second.get_json())
+        self.assertTrue(second.get_json()["duplicate"])
+        self.assertEqual(first.get_json()["item"]["id"], second.get_json()["item"]["id"])
+        matching = [item for item in self.client.get("/api/blueprints").get_json()["items"]
+                    if item["name"] == "防重复图纸"]
+        self.assertEqual(len(matching), 1)
 
     def test_one_click_guest_clones_and_isolates_admin_data(self):
         previous_owner = os.environ.get("OWNER_EMAIL")

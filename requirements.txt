@@ -3,3 +3,5 @@ Flask-SQLAlchemy>=3.1,<4
 gunicorn>=22.0,<24
 Pillow>=10.4,<13
 psycopg[binary]>=3.2,<4
+rapidocr>=3.9,<4
+onnxruntime>=1.20,<2

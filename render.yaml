@@ -10,7 +10,7 @@ services:
       - key: APP_ENV
         value: production
       - key: APP_VERSION
-        value: 2.1.0
+        value: 2.2.0
       - key: APP_URL
         value: https://pingdou.onrender.com
       - key: APP_SECRET

@@ -16,6 +16,10 @@ const state = {
   selectedBlueprints: new Set(),
   generatorResult: null,
   generatorFile: null,
+  generatorBusy: false,
+  generatorMode: 'legend',
+  generatorSaving: false,
+  generatorSaveKey: '',
   blueprintRecognition: null,
   detail: null,
   detailProgress: null,
@@ -33,13 +37,13 @@ const navItems = [
 ];
 
 const pageMeta = {
-  dashboard: ['总览', '今天也从一颗豆开始'],
-  inventory: ['豆子库存', '221 色实时库存与缺货提醒'],
-  workbench: ['拼豆工作台', '入库、出库、补豆与历史流水'],
-  blueprints: ['我的图纸', '从待拼到作品的完整档案'],
-  generator: ['智能制图', '把任意图片转换成 MARD 拼豆图纸'],
-  stats: ['数据统计', '看清库存流动与常用色号'],
-  settings: ['账户设置', '数据、安全与生产环境状态'],
+  dashboard: ['总览', '今天的库存和制作安排'],
+  inventory: ['豆子库存', '随时掌握每个色号的余量'],
+  workbench: ['出入库', '记录每一次入库、出库和库存调整'],
+  blueprints: ['我的图纸', '集中管理图纸、用豆清单和制作进度'],
+  generator: ['智能制图', '上传图纸，快速整理色号与用豆数量'],
+  stats: ['数据统计', '查看库存变化和常用色号'],
+  settings: ['账户设置', '管理账号、库存规则和数据'],
 };
 
 const esc = (value = '') => String(value)
@@ -77,6 +81,20 @@ async function api(url, options = {}) {
   return payload;
 }
 
+async function optimizeUpload(file) {
+  if (!file || !file.type?.startsWith('image/')) return file;
+  try {
+    const bitmap=await createImageBitmap(file), maxSide=1600;
+    const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
+    if (scale===1 && file.size<900000) { bitmap.close(); return file; }
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.max(1,Math.round(bitmap.width*scale)); canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height); bitmap.close();
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.88));
+    return blob ? new File([blob],file.name.replace(/\.[^.]+$/,'.webp'),{type:'image/webp'}) : file;
+  } catch (_error) { return file; }
+}
+
 function loadingPage() {
   return `<div class="panel"><div class="empty"><strong>正在加载</strong><span class="muted">豆子排队中，请稍候…</span></div></div>`;
 }
@@ -93,7 +111,7 @@ function renderAuth() {
         <p class="text-right"><button type="button" class="link-button" data-action="auth-mode" data-mode="forgot">忘记密码？</button></p>
         <div class="auth-divider"><span>或者</span></div>
         <button class="btn btn-secondary btn-block guest-button" type="button" data-action="guest-login">直接以游客身份体验</button>
-        <p class="guest-hint">无需注册，自动进入独立演示空间；你的操作不会影响正式数据。</p>
+        <p class="guest-hint">无需注册，点击后直接进入游客模式；操作与正式账号互不影响。</p>
       </form>`,
     register: `
       <form id="register-form">
@@ -123,7 +141,7 @@ function renderAuth() {
     <div class="auth-layout">
       <section class="auth-showcase">
         <div class="auth-content">
-          <div class="auth-brand"><div class="brand-mark">豆</div><div><strong>豆仓 Pro</strong><small>BEAD WORKSPACE</small></div></div>
+          <div class="auth-brand"><div class="brand-mark">豆</div><div><strong>豆仓 Pro</strong><small>MARD 221 WORKSPACE</small></div></div>
           <h1>让每一颗豆，都有迹可循。</h1>
           <p>从库存、图纸到智能制图和补豆建议，一套工作台完成整个拼豆流程。</p>
           <div class="feature-pills"><span>221 色库存</span><span>智能识图</span><span>逐格进度</span><span>云端同步</span></div>
@@ -148,9 +166,9 @@ function shell(content) {
   appEl.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar">
-        <div class="sidebar-brand"><div class="brand-mark">豆</div><div><strong>豆仓 Pro</strong><small>PRODUCTION V2.1</small></div></div>
+        <div class="sidebar-brand"><div class="brand-mark">豆</div><div><strong>豆仓 Pro</strong><small>MARD 221 WORKSPACE</small></div></div>
         <nav class="nav-list">${nav}</nav>
-        <div class="sidebar-user"><strong>${esc(user.isGuest ? '游客体验空间' : user.username)}</strong><small>${user.isGuest ? '独立临时数据 · 退出后清理' : esc(user.email)}</small><button class="btn btn-sm btn-secondary" data-action="logout">退出登录</button></div>
+        <div class="sidebar-user"><strong>${esc(user.isGuest ? '游客模式' : user.username)}</strong><small>${user.isGuest ? '独立临时数据 · 退出后清理' : esc(user.email)}</small><button class="btn btn-sm btn-secondary" data-action="logout">退出登录</button></div>
       </aside>
       <div class="main-area">
         <header class="topbar"><div><h1>${title}</h1><p>${subtitle}</p></div><div class="button-row">${state.page==='generator'?'':`<button class="btn btn-secondary" data-action="navigate" data-page="generator">✦ 智能制图</button>`}<button class="btn btn-primary" data-action="open-transaction" data-operation="checkin">＋ 入库</button></div></header>
@@ -195,7 +213,7 @@ function renderDashboard() {
   const transactions = (d.recentTransactions || []).map(row => `<tr><td class="code-cell">${esc(row.code)}</td><td class="${row.delta < 0 ? 'danger-text':'success-text'}">${row.delta > 0 ? '+':''}${number(row.delta)}</td><td>${esc(row.remark || operationName(row.operation))}</td><td class="muted">${when(row.createdAt)}</td></tr>`).join('');
   const blueprints = (d.recentBlueprints || []).map(bp => `<div class="blueprint-card" data-action="blueprint-detail" data-id="${bp.id}"><div class="blueprint-image">${bp.imageUrl ? `<img src="${bp.imageUrl}" alt="">`:'暂无预览'}</div><div class="blueprint-body"><h3>${esc(bp.name)}</h3><span class="badge ${bp.status === '已拼' ? 'ok':'warn'}">${esc(bp.status)}</span><div class="blueprint-meta"><span>${bp.colorCount} 色</span><span>${number(bp.totalBeads)} 粒</span></div></div></div>`).join('');
   return `
-    <div class="page-head"><div><h2>你好，${esc(state.session.user.username)}</h2><p>库存、图纸与近期操作都在这里。</p></div><div class="button-row"><button class="btn btn-secondary" data-action="navigate" data-page="blueprints">查看图纸</button><button class="btn btn-primary" data-action="open-blueprint-editor">上传图纸</button></div></div>
+    <div class="page-head"><div><h2>${state.session.user.isGuest?'欢迎体验豆仓':`你好，${esc(state.session.user.username)}`}</h2><p>今天的库存、图纸和制作进度一目了然。</p></div><div class="button-row"><button class="btn btn-secondary" data-action="navigate" data-page="blueprints">查看图纸</button><button class="btn btn-primary" data-action="open-blueprint-editor">上传图纸</button></div></div>
     <div class="metrics">${metric('豆子总库存', d.totalBeads)}${metric('有库存色号', d.trackedColors)}${metric('需要补豆', d.lowColors, 'danger')}${metric('待拼图纸', d.todoBlueprints, 'accent')}</div>
     <div class="grid-2">
       <section class="panel"><div class="panel-head"><h3>最近流水</h3><button class="link-button" data-action="navigate" data-page="workbench">全部记录</button></div><div class="table-wrap">${transactions ? `<table><thead><tr><th>色号</th><th>变化</th><th>备注</th><th>时间</th></tr></thead><tbody>${transactions}</tbody></table>`:`<div class="empty"><strong>还没有流水</strong>从第一次入库开始记录吧。</div>`}</div></section>
@@ -220,7 +238,7 @@ function renderInventory() {
   const chips = series.map(value => `<button class="chip ${state.inventorySeries === value ? 'active':''}" data-action="inventory-series" data-value="${esc(value)}">${esc(value)}</button>`).join('');
   const cards = items.map(item => `<button class="color-card" style="--swatch:${item.hex}" data-action="open-transaction" data-code="${item.id}" data-operation="set"><div class="color-card-top"><span class="code-cell"><span class="swatch"></span>${item.id}</span><span class="badge ${item.status === '库存充足' ? 'ok' : item.status === '欠库存' ? 'danger':'warn'}">${item.status}</span></div><strong>${number(item.quantity)}</strong><small>预警线 ${number(item.threshold)}</small></button>`).join('');
   return `
-    <div class="page-head"><div><h2>我的豆仓</h2><p>${number(all.reduce((sum,item)=>sum+item.quantity,0))} 粒 · ${items.length} 个当前结果</p></div><div class="button-row"><button class="btn btn-accent" data-action="navigate" data-page="workbench">补豆清单</button><button class="btn btn-secondary" data-action="open-transaction" data-operation="checkout">－ 出库</button><button class="btn btn-primary" data-action="open-transaction" data-operation="checkin">＋ 入库</button></div></div>
+    <div class="page-head"><div><h2>我的豆仓</h2><p>共 ${number(all.reduce((sum,item)=>sum+item.quantity,0))} 粒 · 当前显示 ${items.length} 个色号</p></div><div class="inventory-actions"><button class="btn btn-quiet" data-action="navigate" data-page="workbench">查看补豆清单</button><button class="btn btn-secondary" data-action="open-transaction" data-operation="checkout">记录出库</button><button class="btn btn-primary" data-action="open-transaction" data-operation="checkin">补豆入库</button></div></div>
     <div class="toolbar"><input class="search" id="inventory-search" type="text" placeholder="搜索色号，如 H2" value="${esc(state.inventorySearch)}"><select id="inventory-sort"><option value="default">默认排序</option><option value="asc" ${state.inventorySort==='asc'?'selected':''}>库存由少到多</option><option value="desc" ${state.inventorySort==='desc'?'selected':''}>库存由多到少</option><option value="low" ${state.inventorySort==='low'?'selected':''}>只看需补豆</option></select></div>
     <div class="chips" style="margin-bottom:16px">${chips}</div>
     <div class="inventory-grid">${cards || `<div class="empty">没有匹配的色号</div>`}</div>`;
@@ -264,21 +282,23 @@ function renderBlueprints() {
 
 function renderGenerator() {
   const r = state.generatorResult;
-  const resultRows = r ? r.items.map((item,index) => `<tr><td class="code-cell"><span class="swatch" style="--swatch:${item.hex}"></span>${item.id}</td><td><input class="generator-qty" data-index="${index}" type="number" min="0" value="${item.quantity}"></td><td>${(item.quantity/(r.columns*r.rows)*100).toFixed(1)}%</td></tr>`).join('') : '';
+  const total = r ? r.items.reduce((sum,item)=>sum+Number(item.quantity||0),0) : 0;
+  const isLegend = r?.recognitionMode === 'legend';
+  const resultRows = r ? r.items.map((item,index) => `<tr><td class="code-cell"><span class="swatch" style="--swatch:${item.hex}"></span><strong>${item.id}</strong></td><td><input class="generator-qty" data-index="${index}" type="number" min="0" value="${item.quantity}" aria-label="${item.id} 数量"></td><td>${(item.quantity/Math.max(1,total)*100).toFixed(1)}%</td></tr>`).join('') : '';
   return `
-    <div class="page-head"><div><h2>智能制图</h2><p>本地算法使用 CIELAB 色差匹配，不会生成随机结果。</p></div>${r ? `<div class="button-row"><button class="btn btn-secondary" data-action="export-pattern">下载高清 PNG</button><button class="btn btn-primary" data-action="save-generator">保存到图纸</button></div>`:''}</div>
+    <div class="page-head"><div><h2>智能制图</h2><p>上传图纸后，系统会整理色号、数量和可编辑预览。</p></div>${r ? `<div class="button-row">${isLegend?'':`<button class="btn btn-secondary" data-action="export-pattern">下载图纸</button>`}<button class="btn btn-primary" data-action="save-generator">保存到我的图纸</button></div>`:''}</div>
     <div class="generator-layout">
-      <section class="panel"><div class="panel-head"><h3>制图参数</h3><span class="badge ok">MARD 221</span></div><div class="panel-body">
+      <section class="panel generator-control"><div class="panel-head"><h3>上传并识别</h3><span class="badge ok">MARD 221</span></div><div class="panel-body">
         <form id="generator-form">
-          <label class="dropzone"><input class="file-overlay" type="file" name="image" accept="image/jpeg,image/png,image/webp" required><span class="file-cta">选择图片</span><strong>或将图片拖到这里</strong><small id="generator-file-name">JPG / PNG / WebP，最大 ${state.session.maxUploadMb || 8}MB</small></label>
-          <label class="field recognition-mode"><span>识别范围</span><select name="cropMode"><option value="subject">主体优先识别（推荐）</option><option value="full">识别整张图片</option></select><small>主体模式会先去掉与图片边缘连通的背景，再识别豆子颜色。</small></label>
-          <div class="form-grid"><label class="field"><span>主体留白</span><input type="number" name="cropMargin" min="0" max="25" value="8"><small>建议 5–12%</small></label><label class="field"><span>横向豆数</span><input type="number" name="columns" min="8" max="128" value="48" required></label><label class="field"><span>纵向豆数</span><input type="number" name="rows" min="0" max="128" value="0"><small>0 = 按主体比例自动</small></label><label class="field"><span>最多颜色</span><input type="number" name="maxColors" min="0" max="221" value="0"><small>0 = 不限制</small></label><label class="field"><span>色彩处理</span><span class="check-line"><input type="checkbox" name="dither">启用误差扩散抖动</span></label></div>
-          <button class="btn btn-primary btn-block" type="submit" style="margin-top:18px">✦ 开始智能匹配</button>
+          <fieldset class="recognition-picker"><legend>这张图纸是哪一种？</legend><label><input type="radio" name="recognitionMode" value="legend" ${state.generatorMode==='legend'?'checked':''}><span><strong>带色号图例</strong><small>直接读取图例里的色号和数量</small></span></label><label><input type="radio" name="recognitionMode" value="pattern" ${state.generatorMode==='pattern'?'checked':''}><span><strong>只有图案</strong><small>提取主体后识别所用颜色</small></span></label></fieldset>
+          <input type="hidden" name="columns" value="48"><input type="hidden" name="rows" value="0"><input type="hidden" name="maxColors" value="0"><input type="hidden" name="cropMode" value="subject"><input type="hidden" name="cropMargin" value="8">
+          <label class="dropzone ${state.generatorBusy?'is-busy':''}"><input class="file-overlay" type="file" name="image" accept="image/jpeg,image/png,image/webp" required ${state.generatorBusy?'disabled':''}>${state.generatorBusy?'<span class="spinner dark"></span><strong>正在识别图纸</strong><small>带图例的图纸首次识别可能需要一些时间</small>':'<span class="file-cta">选择图纸图片</span><strong>也可以直接拖到这里</strong><small id="generator-file-name">选择后会自动开始识别 · 最大 '+(state.session.maxUploadMb || 8)+'MB</small>'}</label>
+          <button class="hidden" type="submit">开始识别</button>
         </form>
-        <div class="notice" style="margin-top:16px">${r?.crop?.applied?'已提取主体并排除外部背景。':'识别结果可编辑；若主体裁剪不理想，可切换整图识别。'}保存或扣库存前始终需要你确认。</div>
+        <div class="generator-help">${r ? (isLegend?'已读取图例中的色号和数量，你可以在右侧直接修改。':'已提取图案主体并匹配色号，你可以在右侧调整数量。') : '识别完成后会先让你确认，不会自动修改库存。'}</div>
       </div></section>
-      <section class="panel"><div class="panel-head"><h3>${r ? `${r.columns}×${r.rows} · ${r.items.length} 色`:'图纸预览'}</h3>${r?`<span class="badge">${number(r.cells.filter(Boolean).length)} 粒</span>`:''}</div><div class="panel-body">
-        ${r ? `<div class="pattern-stage"><canvas id="generator-canvas" class="pattern-canvas" aria-label="拼豆图纸预览"></canvas></div><div class="table-wrap pattern-result-list" style="margin-top:16px"><table><thead><tr><th>色号</th><th>数量</th><th>占比</th></tr></thead><tbody>${resultRows}</tbody></table></div>`:`<div class="empty"><strong>还没有识别结果</strong>选择图片并设置网格尺寸后开始制图。</div>`}
+      <section class="panel generator-result"><div class="panel-head"><h3>${r ? `${isLegend?'图例识别完成':`${r.columns}×${r.rows} 图案`} · ${r.items.length} 色`:'识别结果'}</h3>${r?`<span class="badge">${number(total)} 粒</span>`:''}</div><div class="panel-body">
+        ${r ? `${isLegend?'<div class="result-summary"><strong>已读取图例</strong><span>请核对色号和数量后保存</span></div>':`<div class="pattern-stage generator-preview"><canvas id="generator-canvas" class="pattern-canvas" aria-label="拼豆图纸预览"></canvas></div>`}<div class="table-wrap pattern-result-list"><table><colgroup><col style="width:30%"><col style="width:46%"><col style="width:24%"></colgroup><thead><tr><th>色号</th><th>数量</th><th>占比</th></tr></thead><tbody>${resultRows}</tbody></table></div>`:`<div class="empty generator-empty"><strong>等待上传图纸</strong><span>识别出的色号和数量会显示在这里。</span></div>`}
       </div></section>
     </div>`;
 }
@@ -297,10 +317,10 @@ function renderStats() {
 function renderSettings() {
   const d = state.data.settings || {user:state.session.user, production:{}};
   const prod = d.production || {};
-  return `<div class="page-head"><div><h2>账户与数据</h2><p>管理个人信息、库存规则和生产环境。</p></div></div>
+  return `<div class="page-head"><div><h2>账户与数据</h2><p>管理个人信息、库存规则和数据安全。</p></div></div>
     <div class="grid-2"><section class="panel"><div class="panel-head"><h3>个人设置</h3></div><div class="panel-body"><form id="settings-form"><label class="field"><span>用户名</span><input type="text" name="username" maxlength="40" value="${esc(d.user.username)}" required></label><label class="field"><span>默认低库存预警线</span><input type="number" name="lowThreshold" min="0" value="${d.user.settings.lowThreshold}" required></label><button class="btn btn-primary" type="submit">保存设置</button></form></div></section>
-    <section class="panel"><div class="panel-head"><h3>生产状态</h3></div><div class="panel-body"><div class="notice ${prod.durableDatabase?'':'danger'}"><strong>${prod.durableDatabase?'数据库已持久化':'当前数据库未持久化'}</strong><br>${prod.durableDatabase?'重新部署不会丢失库存和图纸。':'正式上线前必须在 Render 配置 DATABASE_URL。'}</div><p><span class="badge ${prod.emailConfigured?'ok':'warn'}">${prod.emailConfigured?'重置邮件已配置':'重置邮件待配置'}</span></p><p class="muted">站点：${esc(prod.appUrl || location.origin)}</p></div></section></div>
-    <section class="panel" style="margin-top:18px"><div class="panel-head"><h3>数据管理</h3></div><div class="panel-body">${d.user.isGuest?'<div class="notice"><strong>这是独立游客空间</strong><br>你可以自由体验库存、图纸和智能制图；退出后临时数据会自动清理。</div>':`<div class="setting-section"><h3>库存初始化与导出</h3><p class="muted">给 221 个色号设置统一初始数量，操作会留下完整流水。</p><div class="button-row"><button class="btn btn-secondary" data-action="initialize-inventory">快速设置库存</button><a class="btn btn-secondary" href="/api/inventory/export.csv">导出库存 CSV</a><button class="btn btn-secondary" data-action="export-account">导出完整账户数据</button>${d.user.isAdmin?'<button class="btn btn-soft" data-action="admin-import">迁移旧版数据</button>':''}</div></div><div class="setting-section"><h3 class="danger-text">危险操作</h3><p class="muted">清空会保留审计流水；注销账号会永久删除库存、流水和图纸。</p><div class="button-row"><button class="btn btn-danger" data-action="clear-inventory">清空全部库存</button><button class="btn btn-danger" data-action="delete-account">注销账号</button></div></div>`}</div></section>`;
+    <section class="panel"><div class="panel-head"><h3>数据状态</h3></div><div class="panel-body"><div class="notice ${prod.durableDatabase?'':'danger'}"><strong>${prod.durableDatabase?'数据已安全保存':'数据存储需要检查'}</strong><br>${prod.durableDatabase?'库存和图纸会随账号持续保留。':'请联系管理员完成在线数据存储配置。'}</div><p><span class="badge ${prod.emailConfigured?'ok':'warn'}">${prod.emailConfigured?'可通过邮件找回密码':'密码找回邮件暂不可用'}</span></p><p class="muted">当前站点：${esc(prod.appUrl || location.origin)}</p></div></section></div>
+    <section class="panel" style="margin-top:18px"><div class="panel-head"><h3>数据管理</h3></div><div class="panel-body">${d.user.isGuest?'<div class="notice"><strong>当前为游客模式</strong><br>你可以使用库存、图纸和智能制图；退出后临时数据会自动清理。</div>':`<div class="setting-section"><h3>库存初始化与导出</h3><p class="muted">给 221 个色号设置统一初始数量，操作会留下完整流水。</p><div class="button-row"><button class="btn btn-secondary" data-action="initialize-inventory">快速设置库存</button><a class="btn btn-secondary" href="/api/inventory/export.csv">导出库存 CSV</a><button class="btn btn-secondary" data-action="export-account">导出完整账户数据</button>${d.user.isAdmin?'<button class="btn btn-soft" data-action="admin-import">迁移旧版数据</button>':''}</div></div><div class="setting-section"><h3 class="danger-text">危险操作</h3><p class="muted">清空会保留审计流水；注销账号会永久删除库存、流水和图纸。</p><div class="button-row"><button class="btn btn-danger" data-action="clear-inventory">清空全部库存</button><button class="btn btn-danger" data-action="delete-account">注销账号</button></div></div>`}</div></section>`;
 }
 
 function openModal(title, body, foot = '', large = false) {
@@ -329,7 +349,7 @@ function openTransaction(operation = 'checkin', code = '') {
 function blueprintEditor(bp = null) {
   const items = bp?.items?.map(item => `${item.id},${item.quantity}`).join('\n') || '';
   state.blueprintRecognition = bp?.pattern || {};
-  openModal(bp ? '编辑图纸' : '上传图纸', `<form id="blueprint-form" data-id="${bp?.id || ''}" data-image-url="${esc(bp?.imageUrl || '')}"><textarea name="pattern" hidden>${esc(JSON.stringify(bp?.pattern || {}))}</textarea><div class="form-grid"><label class="field"><span>图纸名称</span><input type="text" name="name" maxlength="80" value="${esc(bp?.name || '')}" required></label><label class="field"><span>状态</span><select name="status">${['待拼','拼制中','已拼','已发布'].map(s=>`<option ${bp?.status===s?'selected':''}>${s}</option>`).join('')}</select></label><label class="field"><span>标签</span><input type="text" name="tag" maxlength="40" value="${esc(bp?.tag || '默认')}"></label><label class="field"><span>文件夹</span><input type="text" name="folder" maxlength="40" value="${esc(bp?.folder || '未分类')}"></label><label class="field"><span>来源链接</span><input type="url" name="source" value="${esc(bp?.source || '')}" placeholder="可选"></label><label class="field"><span>制作时长（分钟）</span><input type="number" name="craftMinutes" min="0" value="${bp?.craftMinutes || 0}"></label></div><label class="field" style="margin-top:16px"><span>${bp?'替换图纸图片':'图纸图片'}</span><input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label><section class="recognize-box"><div><strong>重新识别色号</strong><p class="muted">对当前图片重新提取主体并匹配 MARD 221 色号，结果会自动更新下方用豆明细。</p></div><div class="recognize-controls"><input type="number" name="recognizeColumns" min="8" max="128" value="${bp?.gridColumns || 48}" aria-label="横向豆数"><select name="recognizeCropMode"><option value="subject">主体优先</option><option value="full">整图</option></select><button class="btn btn-secondary" type="button" data-action="reanalyze-blueprint">重新识别</button></div><div id="recognize-preview" class="recognize-preview">${bp?.pattern?.cells?.length?'<canvas id="recognize-canvas" class="pattern-canvas"></canvas>':'识别结果将在这里预览'}</div></section><label class="field"><span>用豆明细</span><textarea name="items" placeholder="每行一个：A1,120">${esc(items)}</textarea></label></form>`, `<button class="btn btn-secondary" data-action="close-modal">取消</button><button class="btn btn-primary" data-action="submit-blueprint">保存图纸</button>`, true);
+  openModal(bp ? '编辑图纸' : '上传图纸', `<form id="blueprint-form" data-id="${bp?.id || ''}" data-image-url="${esc(bp?.imageUrl || '')}"><textarea name="pattern" hidden>${esc(JSON.stringify(bp?.pattern || {}))}</textarea><div class="form-grid"><label class="field"><span>图纸名称</span><input type="text" name="name" maxlength="80" value="${esc(bp?.name || '')}" required></label><label class="field"><span>状态</span><select name="status">${['待拼','拼制中','已拼','已发布'].map(s=>`<option ${bp?.status===s?'selected':''}>${s}</option>`).join('')}</select></label><label class="field"><span>标签</span><input type="text" name="tag" maxlength="40" value="${esc(bp?.tag || '默认')}"></label><label class="field"><span>文件夹</span><input type="text" name="folder" maxlength="40" value="${esc(bp?.folder || '未分类')}"></label><label class="field"><span>来源链接</span><input type="url" name="source" value="${esc(bp?.source || '')}" placeholder="可选"></label><label class="field"><span>制作时长（分钟）</span><input type="number" name="craftMinutes" min="0" value="${bp?.craftMinutes || 0}"></label></div><label class="field" style="margin-top:16px"><span>${bp?'替换图纸图片':'图纸图片'}</span><input type="file" name="image" accept="image/jpeg,image/png,image/webp"></label><section class="recognize-box"><div><strong>重新识别色号</strong><p class="muted">选择图纸类型后，系统会重新整理色号和数量。</p></div><div class="recognize-controls"><select name="recognizeMode" aria-label="图纸类型"><option value="legend">带色号图例</option><option value="pattern">只有图案</option></select><button class="btn btn-secondary" type="button" data-action="reanalyze-blueprint">重新识别</button></div><div id="recognize-preview" class="recognize-preview">${bp?.pattern?.cells?.length?'<canvas id="recognize-canvas" class="pattern-canvas"></canvas>':'识别结果将在这里预览'}</div></section><label class="field"><span>用豆明细</span><textarea name="items" placeholder="每行一个：A1,120">${esc(items)}</textarea></label></form>`, `<button class="btn btn-secondary" data-action="close-modal">取消</button><button class="btn btn-primary" data-action="submit-blueprint">保存图纸</button>`, true);
   if (bp?.pattern?.cells?.length) requestAnimationFrame(()=>drawPattern(document.querySelector('#recognize-canvas'),bp.pattern));
 }
 
@@ -356,7 +376,7 @@ async function showBlueprintDetail(id) {
     state.detailProgress = {byColor:{...(bp.progress?.byColor || {})}, doneCells:new Set(bp.progress?.doneCells || [])};
     const itemRows = bp.items.map(item => `<tr><td class="code-cell">${item.id}</td><td>${number(item.quantity)}</td><td><input class="progress-color" data-code="${item.id}" type="number" min="0" max="${item.quantity}" value="${state.detailProgress.byColor[item.id] || 0}"></td></tr>`).join('');
     const done = state.detailProgress.doneCells.size, total = bp.pattern?.cells?.filter(Boolean).length || bp.totalBeads;
-    openModal(esc(bp.name), `<div class="grid-2"><div>${bp.imageUrl?`<div class="blueprint-detail-media"><img src="${bp.imageUrl}" alt="${esc(bp.name)}"></div>`:'<div class="empty">无原图</div>'}<div class="blueprint-meta"><span class="badge ${bp.status==='已拼'?'ok':'warn'}">${bp.status}</span><span class="badge">${esc(bp.tag)}</span><span class="badge">${number(bp.totalBeads)} 粒</span></div>${bp.pattern?.cells?.length?`<h3>逐格拼制进度</h3><p class="muted">点击格子标记已拼；绿色代表已完成。</p><div class="pattern-stage"><canvas id="progress-canvas" class="pattern-canvas"></canvas></div><p>${done} / ${total} 格</p>`:''}</div><div><h3>逐色进度</h3><div class="table-wrap"><table><thead><tr><th>色号</th><th>需要</th><th>已拼</th></tr></thead><tbody>${itemRows}</tbody></table></div></div></div>`, `<button class="btn btn-danger" data-action="delete-blueprint" data-id="${bp.id}">删除</button><button class="btn btn-secondary" data-action="edit-blueprint" data-id="${bp.id}">编辑</button><button class="btn btn-secondary" data-action="share-blueprint" data-id="${bp.id}">分享</button><button class="btn btn-accent" data-action="consume-blueprint" data-id="${bp.id}">记录出库</button><button class="btn btn-primary" data-action="save-progress" data-id="${bp.id}">保存进度</button>`, true);
+    openModal(esc(bp.name), `<div class="blueprint-detail-layout"><div class="blueprint-preview-column">${bp.imageUrl?`<div class="blueprint-detail-media"><img src="${bp.imageUrl}" alt="${esc(bp.name)}"></div>`:'<div class="empty">无原图</div>'}<div class="blueprint-meta"><span class="badge ${bp.status==='已拼'?'ok':'warn'}">${bp.status}</span><span class="badge">${esc(bp.tag)}</span><span class="badge">${number(bp.totalBeads)} 粒</span></div>${bp.pattern?.cells?.length?`<h3>逐格拼制进度</h3><p class="muted">点击格子标记已拼；绿色代表已完成。</p><div class="pattern-stage detail-pattern-stage"><canvas id="progress-canvas" class="pattern-canvas"></canvas></div><p>${done} / ${total} 格</p>`:''}</div><div class="blueprint-progress-panel"><h3>逐色进度</h3><div class="table-wrap detail-progress-table"><table><thead><tr><th>色号</th><th>需要</th><th>已拼</th></tr></thead><tbody>${itemRows}</tbody></table></div></div></div>`, `<button class="btn btn-danger" data-action="delete-blueprint" data-id="${bp.id}">删除</button><button class="btn btn-secondary" data-action="edit-blueprint" data-id="${bp.id}">编辑</button><button class="btn btn-secondary" data-action="share-blueprint" data-id="${bp.id}">分享</button><button class="btn btn-accent" data-action="consume-blueprint" data-id="${bp.id}">记录出库</button><button class="btn btn-primary" data-action="save-progress" data-id="${bp.id}">保存进度</button>`, true);
     requestAnimationFrame(() => drawPattern(document.querySelector('#progress-canvas'), bp.pattern, state.detailProgress.doneCells));
   } catch (error) { toast(error.message, 'error'); }
 }
@@ -371,7 +391,8 @@ async function calculateSelected() {
 
 function generatorSaveDialog() {
   if (!state.generatorResult) return;
-  openModal('保存智能图纸', `<form id="generator-save-form"><label class="field"><span>图纸名称</span><input type="text" name="name" maxlength="80" required placeholder="给图纸起个名字"></label><div class="form-grid"><label class="field"><span>标签</span><input type="text" name="tag" value="智能制图"></label><label class="field"><span>文件夹</span><input type="text" name="folder" value="智能制图"></label></div></form>`, `<button class="btn btn-secondary" data-action="close-modal">取消</button><button class="btn btn-primary" data-action="submit-generator-save">保存</button>`);
+  state.generatorSaveKey=crypto.randomUUID(); state.generatorSaving=false;
+  openModal('保存到我的图纸', `<form id="generator-save-form"><label class="field"><span>图纸名称</span><input type="text" name="name" maxlength="80" required placeholder="例如：熊猫杯垫"></label><div class="form-grid"><label class="field"><span>标签</span><input type="text" name="tag" value="智能制图"></label><label class="field"><span>文件夹</span><input type="text" name="folder" value="我的图纸"></label></div><div id="generator-save-status" class="save-status">确认后会保存图片、色号和用豆数量。</div></form>`, `<button class="btn btn-secondary" data-action="close-modal">取消</button><button class="btn btn-primary" data-action="submit-generator-save">确认保存</button>`);
 }
 
 function publicShareView(data) {
@@ -411,13 +432,14 @@ document.addEventListener('click', async event => {
       }
       if (!file) throw new Error('请先选择一张图纸图片');
       target.disabled=true; target.textContent='识别中…';
-      const fd=new FormData(); fd.set('image',file); fd.set('columns',form.elements.recognizeColumns.value);
-      fd.set('rows','0'); fd.set('maxColors','0'); fd.set('cropMode',form.elements.recognizeCropMode.value); fd.set('cropMargin','8'); fd.set('dither','false');
+      const fd=new FormData(); fd.set('image',file); fd.set('columns','48');
+      fd.set('rows','0'); fd.set('maxColors','0'); fd.set('recognitionMode',form.elements.recognizeMode.value); fd.set('cropMode','subject'); fd.set('cropMargin','8'); fd.set('dither','false');
       const result=await api('/api/analyze',{method:'POST',body:fd}); state.blueprintRecognition=result.result;
       form.elements.pattern.value=JSON.stringify(result.result);
       form.elements.items.value=result.result.items.map(item=>`${item.id},${item.quantity}`).join('\n');
-      document.querySelector('#recognize-preview').innerHTML=`<div class="recognize-summary">${result.result.crop?.applied?'已提取主体 · ':''}${result.result.columns}×${result.result.rows} · ${result.result.items.length} 色</div><canvas id="recognize-canvas" class="pattern-canvas"></canvas>`;
-      drawPattern(document.querySelector('#recognize-canvas'),result.result); toast('色号已重新识别，可继续手动调整数量');
+      const legend=result.result.recognitionMode==='legend';
+      document.querySelector('#recognize-preview').innerHTML=`<div class="recognize-summary">${legend?'已读取图例':`${result.result.columns}×${result.result.rows} 图案`} · ${result.result.items.length} 色</div>${legend?'':'<canvas id="recognize-canvas" class="pattern-canvas"></canvas>'}`;
+      if (!legend) drawPattern(document.querySelector('#recognize-canvas'),result.result); toast('色号和数量已更新，可继续手动调整');
       target.disabled=false; target.textContent='重新识别';
     }
     if (action === 'blueprint-detail') await showBlueprintDetail(target.dataset.id);
@@ -458,7 +480,7 @@ document.addEventListener('click', async event => {
       await navigator.clipboard.writeText(state.data.restock?.command || ''); toast('补豆口令已复制');
     }
     if (action === 'save-generator') generatorSaveDialog();
-    if (action === 'submit-generator-save') document.querySelector('#generator-save-form')?.requestSubmit();
+    if (action === 'submit-generator-save' && !state.generatorSaving) document.querySelector('#generator-save-form')?.requestSubmit();
     if (action === 'export-pattern') await exportPattern();
     if (action === 'initialize-inventory') {
       const quantity = prompt('请输入每个色号的初始数量：','1000');
@@ -486,8 +508,8 @@ document.addEventListener('click', async event => {
 });
 
 document.addEventListener('input', event => {
-  if (event.target.id === 'inventory-search') { state.inventorySearch=event.target.value; renderPage(); document.querySelector('#inventory-search')?.focus(); }
-  if (event.target.id === 'blueprint-search') { state.blueprintSearch=event.target.value; renderPage(); document.querySelector('#blueprint-search')?.focus(); }
+  if (event.target.id === 'inventory-search') { const value=event.target.value; state.inventorySearch=value; renderPage(); const input=document.querySelector('#inventory-search'); input?.focus(); input?.setSelectionRange(value.length,value.length); }
+  if (event.target.id === 'blueprint-search') { const value=event.target.value; state.blueprintSearch=value; renderPage(); const input=document.querySelector('#blueprint-search'); input?.focus(); input?.setSelectionRange(value.length,value.length); }
   if (event.target.classList.contains('generator-qty') && state.generatorResult) {
     state.generatorResult.items[Number(event.target.dataset.index)].quantity=Math.max(0,Number(event.target.value||0));
   }
@@ -499,9 +521,10 @@ document.addEventListener('change', async event => {
     const file = event.target.files[0];
     if (file) document.querySelector('#transaction-form textarea[name="items"]').value = await file.text();
   }
+  if (event.target.closest('#generator-form') && event.target.name === 'recognitionMode') state.generatorMode=event.target.value;
   if (event.target.closest('#generator-form') && event.target.name === 'image') {
     const file=event.target.files[0], label=document.querySelector('#generator-file-name');
-    if (file && label) label.textContent=`已选择：${file.name}`;
+    if (file && label) { label.textContent=`已选择：${file.name}`; event.target.form.requestSubmit(); }
   }
 });
 
@@ -550,17 +573,39 @@ document.addEventListener('submit', async event => {
       toast('图纸已保存'); closeModal(); await navigate('blueprints');
     }
     if (form.id === 'generator-form') {
-      const fd=new FormData(form); state.generatorFile=fd.get('image'); fd.set('dither',fd.get('dither')?'true':'false');
-      shell(`<div class="notice">正在匹配 221 色卡，较大网格可能需要十几秒…</div>`);
-      const result=await api('/api/analyze',{method:'POST',body:fd}); state.generatorResult=result.result; toast(result.message); renderPage();
+      if (state.generatorBusy) return;
+      const fd=new FormData(form), rawFile=fd.get('image');
+      state.generatorMode=String(fd.get('recognitionMode') || 'legend');
+      state.generatorBusy=true; renderPage();
+      try {
+        state.generatorFile=await optimizeUpload(rawFile);
+        fd.set('image',state.generatorFile); fd.set('dither','false');
+        const result=await api('/api/analyze',{method:'POST',body:fd});
+        state.generatorResult=result.result; toast(result.message);
+      } finally { state.generatorBusy=false; }
+      renderPage();
     }
     if (form.id === 'generator-save-form') {
+      if (state.generatorSaving) return;
       const fd=new FormData(form), payload=new FormData();
+      const saveButton=document.querySelector('[data-action="submit-generator-save"]'), status=document.querySelector('#generator-save-status');
+      state.generatorSaving=true;
+      if (saveButton) { saveButton.disabled=true; saveButton.innerHTML='<span class="spinner"></span>正在保存'; }
+      if (status) status.textContent='正在保存图片和用豆清单，请稍候…';
       payload.set('name',fd.get('name')); payload.set('tag',fd.get('tag')); payload.set('folder',fd.get('folder')); payload.set('status','待拼');
+      payload.set('requestKey',state.generatorSaveKey);
       if (state.generatorFile) payload.set('image',state.generatorFile);
       payload.set('items',JSON.stringify(state.generatorResult.items.map(({id,quantity})=>({id,quantity:Number(quantity)}))));
       payload.set('pattern',JSON.stringify(state.generatorResult));
-      await api('/api/blueprints',{method:'POST',body:payload}); toast('智能图纸已保存'); closeModal(); await navigate('blueprints');
+      try {
+        const result=await api('/api/blueprints',{method:'POST',body:payload});
+        if (status) status.textContent='保存成功，正在打开我的图纸…';
+        toast(result.duplicate?'这张图纸已经保存过了':'图纸已保存'); closeModal(); await navigate('blueprints');
+      } finally {
+        state.generatorSaving=false;
+        const currentButton=document.querySelector('[data-action="submit-generator-save"]');
+        if (currentButton) { currentButton.disabled=false; currentButton.textContent='确认保存'; }
+      }
     }
     if (form.id === 'settings-form') {
       const fd=Object.fromEntries(new FormData(form)); fd.lowThreshold=Number(fd.lowThreshold);
@@ -572,7 +617,7 @@ document.addEventListener('submit', async event => {
       await api('/api/account',{method:'DELETE',json:{password:values.password,confirm:values.confirm}});
       state.session={authenticated:false,user:null}; closeModal(); toast('账号与数据已删除'); renderAuth();
     }
-  } catch (error) { toast(error.message,'error'); if (state.page==='generator') renderPage(); }
+  } catch (error) { state.generatorBusy=false; toast(error.message,'error'); if (state.page==='generator') renderPage(); }
   finally { if (submit) submit.disabled=false; }
 });
 

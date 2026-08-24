@@ -76,6 +76,8 @@ input:focus, textarea:focus, select:focus { border-color: #5aafa2; box-shadow: 0
 .btn-primary { background: var(--brand); color: white; box-shadow: 0 8px 20px rgba(8,127,115,.18); }
 .btn-primary:hover { background: var(--brand-dark); }
 .btn-secondary { border-color: var(--line); background: white; }
+.btn-quiet { border-color: transparent; color: #9a4d1b; background: #fff4ec; box-shadow: none; }
+.btn-quiet:hover { background: #ffe9da; }
 .btn-soft { background: var(--brand-soft); color: var(--brand-dark); }
 .btn-accent { background: #fff0e6; color: #a64d15; }
 .btn-danger { background: #fff0f0; color: var(--danger); border-color: #f5cccc; }
@@ -135,7 +137,9 @@ input:focus, textarea:focus, select:focus { border-color: #5aafa2; box-shadow: 0
 .badge.warn { color: #9a5b12; background: #fff0d9; }
 .badge.danger { color: #ae3434; background: #fde3e3; }
 
-.inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px,1fr)); gap: 10px; }
+.inventory-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.inventory-actions .btn { min-width: 112px; min-height: 46px; }
+.inventory-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; }
 .color-card { position: relative; overflow: hidden; min-height: 116px; padding: 14px; border: 1px solid var(--line); border-radius: 15px; background: white; }
 .color-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 8px; background: var(--swatch); }
 .color-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -157,6 +161,15 @@ tbody tr:hover { background: #f9fbfa; }
 .blueprint-image img { width: 100%; height: 100%; object-fit: contain; }
 .blueprint-detail-media { height: clamp(220px,42vh,520px); padding: 14px; display: grid; place-items: center; overflow: hidden; border-radius: 14px; background: #edf3f1; }
 .blueprint-detail-media img { width: 100%; height: 100%; object-fit: contain; }
+.blueprint-detail-layout { display: grid; grid-template-columns: minmax(0,1.45fr) minmax(300px,.55fr); gap: 24px; align-items: start; }
+.blueprint-preview-column, .blueprint-progress-panel { min-width: 0; }
+.blueprint-detail-layout .blueprint-detail-media { height: min(56vh,620px); }
+.blueprint-detail-layout .blueprint-detail-media img { object-fit: scale-down; }
+.detail-progress-table { max-height: min(68vh,680px); }
+.detail-pattern-stage { min-height: 0; max-height: 56vh; }
+.original-image { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.original-image summary { cursor: pointer; }
+.original-image img { display: block; max-height: 420px; margin-top: 10px; object-fit: contain; }
 .blueprint-body { padding: 15px; }
 .blueprint-body h3 { margin: 0 0 6px; font-size: 17px; }
 .blueprint-meta { display: flex; flex-wrap: wrap; gap: 7px; margin: 11px 0 14px; }
@@ -166,14 +179,31 @@ tbody tr:hover { background: #f9fbfa; }
 .dropzone .file-overlay { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; opacity: 0; cursor: pointer; }
 .file-cta { padding: 8px 14px; border-radius: 10px; color: white; background: var(--brand); font-weight: 800; }
 .dropzone small { color: var(--muted); }
-.recognition-mode { margin-top: 16px; }
 .generator-layout { display: grid; grid-template-columns: minmax(330px,400px) minmax(0,1fr); gap: 18px; align-items: start; }
+.recognition-picker { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin: 0 0 16px; padding: 0; border: 0; }
+.recognition-picker legend { grid-column: 1/-1; margin-bottom: 3px; color: #43524f; font-size: 13px; font-weight: 800; }
+.recognition-picker label { position: relative; display: block; cursor: pointer; }
+.recognition-picker input { position: absolute; opacity: 0; pointer-events: none; }
+.recognition-picker span { min-height: 82px; padding: 14px; display: flex; flex-direction: column; justify-content: center; border: 1px solid var(--line); border-radius: 13px; background: white; transition: .18s ease; }
+.recognition-picker strong { font-size: 14px; }
+.recognition-picker small { margin-top: 3px; color: var(--muted); line-height: 1.35; }
+.recognition-picker label:has(input:checked) span { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 3px rgba(8,127,115,.09); }
+.dropzone.is-busy { border-style: solid; background: #edf8f5; }
+.spinner.dark { color: var(--brand); border-color: #b9ddd6; border-top-color: currentColor; }
+.generator-help { margin-top: 14px; padding: 12px 14px; border-radius: 12px; color: var(--brand-dark); background: #edf8f5; font-size: 13px; }
+.result-summary { margin-bottom: 14px; padding: 13px 15px; display: flex; justify-content: space-between; gap: 14px; border-radius: 12px; background: var(--surface-soft); }
+.result-summary span { color: var(--muted); }
+.generator-empty { min-height: 420px; display: flex; flex-direction: column; justify-content: center; }
 .pattern-stage { min-height: 420px; display: grid; place-items: center; padding: 18px; overflow: auto; border-radius: 16px; background: #e7eeeb; }
 .pattern-canvas { max-width: 100%; height: auto; border: 1px solid #acbbb7; background: white; image-rendering: pixelated; cursor: crosshair; }
-.pattern-result-list { max-height: 420px; overflow: auto; }
+.pattern-result-list { max-height: 420px; margin-top: 16px; overflow: auto; border: 1px solid var(--line); border-radius: 13px; }
+.pattern-result-list table { table-layout: fixed; }
+.pattern-result-list td.code-cell { display: table-cell; white-space: nowrap; }
+.pattern-result-list td.code-cell .swatch { display: inline-block; margin-right: 8px; vertical-align: middle; }
+.pattern-result-list input[type="number"] { min-height: 44px; }
 .recognize-box { margin: 18px 0; padding: 16px; border: 1px solid var(--line); border-radius: 15px; background: #f7faf9; }
 .recognize-box p { margin: 4px 0 12px; }
-.recognize-controls { display: grid; grid-template-columns: 110px 130px auto; gap: 9px; }
+.recognize-controls { display: grid; grid-template-columns: minmax(190px,1fr) auto; gap: 10px; align-items: end; }
 .recognize-preview { min-height: 110px; max-height: 300px; margin-top: 12px; padding: 12px; display: grid; place-items: center; overflow: auto; border-radius: 12px; color: var(--muted); background: #e8efec; }
 .recognize-summary { width: 100%; margin-bottom: 8px; color: var(--brand-dark); font-size: 13px; font-weight: 700; }
 
@@ -204,6 +234,7 @@ tbody tr:hover { background: #f9fbfa; }
 .notice { padding: 13px 15px; border: 1px solid #b9ddd6; border-radius: 12px; color: #0b6258; background: #eefaf7; }
 .notice.warn { border-color: #f3d09e; color: #86500e; background: #fff8eb; }
 .notice.danger { border-color: #efb9b9; color: #9d3333; background: #fff1f1; }
+.save-status { margin-top: 16px; padding: 12px 14px; border-radius: 12px; color: var(--muted); background: var(--surface-soft); }
 .setting-section + .setting-section { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
 
 @media (max-width: 1000px) {
@@ -212,6 +243,8 @@ tbody tr:hover { background: #f9fbfa; }
   .auth-brand { margin-bottom: 40px; }
   .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .generator-layout { grid-template-columns: 1fr; }
+  .inventory-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .blueprint-detail-layout { grid-template-columns: 1fr; }
   .pattern-stage { min-height: 320px; }
 }
 
@@ -234,6 +267,7 @@ tbody tr:hover { background: #f9fbfa; }
   .modal-backdrop { padding: 0; align-items: end; }
   .modal, .modal.large { width: 100%; max-height: 92vh; border-radius: 22px 22px 0 0; }
   .recognize-controls { grid-template-columns: 1fr; }
+  .recognition-picker { grid-template-columns: 1fr; }
   .pattern-stage { min-height: 240px; padding: 10px; }
   .modal-foot .btn { flex: 1 1 auto; }
   .mobile-nav { position: fixed; inset: auto 0 0 0; z-index: 40; padding: 7px max(8px, env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(5,1fr); border-top: 1px solid var(--line); background: rgba(255,255,255,.96); backdrop-filter: blur(16px); }
