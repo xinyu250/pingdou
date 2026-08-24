@@ -34,6 +34,8 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 database_url = os.getenv("DATABASE_URL", "").strip()
 if database_url.startswith("postgres://"):
     database_url = "postgresql://" + database_url.removeprefix("postgres://")
+if database_url.startswith("postgresql://"):
+    database_url = "postgresql+psycopg://" + database_url.removeprefix("postgresql://")
 if not database_url:
     database_url = f"sqlite:///{(DATA_DIR / 'pingdou.db').as_posix()}"
 
