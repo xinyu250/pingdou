@@ -104,6 +104,61 @@ class ProductionFlowTest(unittest.TestCase):
         self.assertEqual(exported.status_code, 200)
         self.assertEqual(exported.mimetype, "image/png")
 
+    def test_subject_first_quantization_removes_edge_background(self):
+        image = Image.new("RGB", (120, 80), "white")
+        for x in range(0, 24):
+            for y in range(80):
+                image.putpixel((x, y), (10, 60, 58))  # screenshot-like sidebar touching the edge
+        for x in range(42, 78):
+            for y in range(22, 58):
+                image.putpixel((x, y), (215, 50, 55))
+        image_bytes = io.BytesIO()
+        image.save(image_bytes, "PNG")
+        image_bytes.seek(0)
+        analyzed = self.client.post("/api/analyze", headers=self.headers, data={
+            "columns": "16", "rows": "0", "cropMode": "subject", "cropMargin": "8", "dither": "false",
+            "image": (image_bytes, "subject.png"),
+        }, content_type="multipart/form-data")
+        self.assertEqual(analyzed.status_code, 200, analyzed.get_json())
+        result = analyzed.get_json()["result"]
+        self.assertTrue(result["crop"]["applied"])
+        self.assertGreater(result["crop"]["box"][0], 24)
+        self.assertGreater(result["rows"], 11)  # full image would be 16x11; square subject keeps its own ratio
+        self.assertTrue(any(cell is None for cell in result["cells"]))
+
+    def test_one_click_guest_clones_and_isolates_admin_data(self):
+        previous_owner = os.environ.get("OWNER_EMAIL")
+        os.environ["OWNER_EMAIL"] = self.email
+        with app.app_context():
+            source = User.query.filter_by(email=self.email).one()
+            source.is_admin = True
+            db.session.commit()
+        self.client.post("/api/inventory/transactions", headers=self.headers, json={
+            "operation": "checkin", "items": [{"id": "A1", "quantity": 321}], "remark": "游客模板"
+        })
+        self.client.post("/api/blueprints", headers=self.headers, json={
+            "name": "游客示例图纸", "items": [{"id": "A1", "quantity": 12}], "pattern": {}
+        })
+        guest = app.test_client()
+        created = guest.post("/api/auth/guest")
+        self.assertEqual(created.status_code, 201, created.get_json())
+        self.assertTrue(created.get_json()["user"]["isGuest"])
+        guest_headers = {"X-CSRF-Token": created.get_json()["csrfToken"]}
+        guest_inventory = {row["id"]: row["quantity"] for row in guest.get("/api/inventory").get_json()["items"]}
+        self.assertEqual(guest_inventory["A1"], 321)
+        self.assertEqual(len(guest.get("/api/blueprints").get_json()["items"]), 1)
+        guest.post("/api/inventory/transactions", headers=guest_headers, json={
+            "operation": "checkout", "items": [{"id": "A1", "quantity": 21}], "remark": "游客操作"
+        })
+        owner_inventory = {row["id"]: row["quantity"] for row in self.client.get("/api/inventory").get_json()["items"]}
+        self.assertEqual(owner_inventory["A1"], 321)
+        self.assertEqual(guest.post("/api/auth/logout", headers=guest_headers).status_code, 200)
+        self.assertEqual(guest.get("/api/inventory").status_code, 401)
+        if previous_owner is None:
+            os.environ.pop("OWNER_EMAIL", None)
+        else:
+            os.environ["OWNER_EMAIL"] = previous_owner
+
     def test_password_reset_debug_flow(self):
         forgot = self.client.post("/api/auth/forgot-password", json={"email": self.email})
         self.assertEqual(forgot.status_code, 200)

@@ -21,7 +21,7 @@ from typing import Any
 
 from flask import Flask, Response, has_request_context, jsonify, request, send_file, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageOps
 from sqlalchemy import UniqueConstraint, func
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -226,7 +226,7 @@ def prepare_request():
     if "csrf_token" not in session:
         session["csrf_token"] = secrets.token_urlsafe(24)
     if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.path.startswith("/api/"):
-        exempt = {"/api/auth/login", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password"}
+        exempt = {"/api/auth/login", "/api/auth/guest", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password"}
         if request.path not in exempt and not secrets.compare_digest(request.headers.get("X-CSRF-Token", ""), session.get("csrf_token", "")):
             return jsonify({"error": "页面令牌已失效，请刷新后重试", "code": "CSRF_FAILED"}), 403
 
@@ -366,7 +366,8 @@ with app.app_context():
 
 
 def serialize_user(user: User) -> dict[str, Any]:
-    return {"id": user.id, "email": user.email, "username": user.username, "isAdmin": user.is_admin, "settings": user.settings}
+    return {"id": user.id, "email": user.email, "username": user.username, "isAdmin": user.is_admin,
+            "isGuest": bool(user.settings.get("demoGuest")), "settings": user.settings}
 
 
 def serialize_blueprint(bp: Blueprint, include_detail: bool = False) -> dict[str, Any]:
@@ -416,7 +417,7 @@ def health():
     db.session.execute(db.select(func.count(User.id))).scalar()
     durable = bool(os.getenv("DATABASE_URL"))
     return jsonify({"status": "ok", "database": "postgresql" if durable else "sqlite", "durable": durable,
-                    "version": os.getenv("APP_VERSION", "2.0.0")})
+                    "version": os.getenv("APP_VERSION", "2.1.0")})
 
 
 @app.get("/api/session")
@@ -471,9 +472,80 @@ def login():
     return jsonify({"user": serialize_user(user), "csrfToken": session["csrf_token"]})
 
 
+def remove_user_data(user: User) -> None:
+    blueprint_ids = [bp.id for bp in Blueprint.query.filter_by(user_id=user.id).all()]
+    if blueprint_ids:
+        BlueprintItem.query.filter(BlueprintItem.blueprint_id.in_(blueprint_ids)).delete(synchronize_session=False)
+    Blueprint.query.filter_by(user_id=user.id).delete()
+    InventoryTransaction.query.filter_by(user_id=user.id).delete()
+    Inventory.query.filter_by(user_id=user.id).delete()
+    PasswordReset.query.filter_by(user_id=user.id).delete()
+    AuditLog.query.filter_by(user_id=user.id).delete()
+    db.session.delete(user)
+
+
+def clone_demo_data(source: User, guest: User) -> None:
+    for row in Inventory.query.filter_by(user_id=source.id).all():
+        db.session.add(Inventory(user_id=guest.id, color_code=row.color_code, quantity=row.quantity,
+                                 low_threshold=row.low_threshold))
+    for tx in InventoryTransaction.query.filter_by(user_id=source.id).order_by(InventoryTransaction.id).all():
+        db.session.add(InventoryTransaction(
+            user_id=guest.id, color_code=tx.color_code, operation=tx.operation, delta=tx.delta,
+            balance_after=tx.balance_after, remark=tx.remark, source=tx.source,
+            batch_id=str(uuid.uuid4()), undone=tx.undone, created_at=tx.created_at,
+        ))
+    for source_bp in Blueprint.query.filter_by(user_id=source.id).all():
+        guest_bp = Blueprint(
+            user_id=guest.id, name=source_bp.name, tag=source_bp.tag, folder=source_bp.folder,
+            source_url=source_bp.source_url, status=source_bp.status, image_data=source_bp.image_data,
+            image_mime=source_bp.image_mime, grid_columns=source_bp.grid_columns, grid_rows=source_bp.grid_rows,
+            pattern_json=source_bp.pattern_json, progress_json=source_bp.progress_json,
+            craft_minutes=source_bp.craft_minutes, created_at=source_bp.created_at,
+        )
+        db.session.add(guest_bp)
+        db.session.flush()
+        for item in BlueprintItem.query.filter_by(blueprint_id=source_bp.id).all():
+            db.session.add(BlueprintItem(blueprint_id=guest_bp.id, color_code=item.color_code, quantity=item.quantity))
+
+
+@app.post("/api/auth/guest")
+def guest_login():
+    if rate_limited("guest", 12, 3600):
+        return jsonify({"error": "游客空间创建过于频繁，请稍后再试"}), 429
+    cutoff = utcnow() - timedelta(hours=24)
+    expired = User.query.filter(User.email.like("guest+%@demo.local"), User.created_at < cutoff).limit(30).all()
+    for old_guest in expired:
+        remove_user_data(old_guest)
+    owner_email = os.getenv("OWNER_EMAIL", "").strip().lower()
+    source = User.query.filter_by(email=owner_email).first() if owner_email else None
+    source = source or User.query.filter_by(is_admin=True).order_by(User.id).first()
+    if not source:
+        return jsonify({"error": "游客演示数据暂未准备好"}), 503
+    guest_id = uuid.uuid4().hex
+    settings = dict(source.settings)
+    settings.update({"demoGuest": True, "expiresAt": (utcnow() + timedelta(hours=24)).isoformat()})
+    guest = User(email=f"guest+{guest_id}@demo.local", username="游客体验账号",
+                 password_hash=generate_password_hash(secrets.token_urlsafe(32)), settings_json=json.dumps(settings))
+    db.session.add(guest)
+    db.session.flush()
+    clone_demo_data(source, guest)
+    audit("auth.guest", {"templateUserId": source.id}, guest.id)
+    db.session.commit()
+    session.clear()
+    session["user_id"] = guest.id
+    session["csrf_token"] = secrets.token_urlsafe(24)
+    return jsonify({"user": serialize_user(guest), "csrfToken": session["csrf_token"]}), 201
+
+
 @app.post("/api/auth/logout")
 @login_required
 def logout(user: User):
+    is_guest = bool(user.settings.get("demoGuest"))
+    if is_guest:
+        remove_user_data(user)
+        db.session.commit()
+        session.clear()
+        return jsonify({"status": "ok"})
     audit("auth.logout", user_id=user.id)
     db.session.commit()
     session.clear()
@@ -970,6 +1042,107 @@ def quantize_pattern(image: Image.Image, columns: int, rows: int, dither: bool, 
             "items": [{"id": code, "hex": hex_map[code], "quantity": count} for code, count in counts.most_common()]}
 
 
+def isolate_subject(image: Image.Image, margin_percent: int = 8) -> tuple[Image.Image, dict[str, Any]]:
+    """Remove only edge-connected background, preserving enclosed light areas in the subject."""
+    source = ImageOps.exif_transpose(image).convert("RGBA")
+    original_width, original_height = source.size
+    scale = min(1.0, 320 / max(original_width, original_height))
+    small = source.resize((max(1, round(original_width * scale)), max(1, round(original_height * scale))),
+                          Image.Resampling.BILINEAR)
+    width, height = small.size
+    rgba = list(small.get_flattened_data())
+    border_indices = set(range(width)) | set(range((height - 1) * width, height * width))
+    border_indices |= {y * width for y in range(height)} | {y * width + width - 1 for y in range(height)}
+    opaque_border = [rgba[i][:3] for i in border_indices if rgba[i][3] > 32]
+    if not opaque_border:
+        return source, {"mode": "subject", "applied": False, "reason": "transparent-image"}
+    channels = [sorted(pixel[channel] for pixel in opaque_border) for channel in range(3)]
+    background = tuple(channel[len(channel) // 2] for channel in channels)
+    border_distances = sorted(math.sqrt(sum((pixel[i] - background[i]) ** 2 for i in range(3))) for pixel in opaque_border)
+    threshold = min(72.0, max(24.0, border_distances[round((len(border_distances) - 1) * .85)] + 14.0))
+    background_like = [pixel[3] <= 32 or math.sqrt(sum((pixel[i] - background[i]) ** 2 for i in range(3))) <= threshold
+                       for pixel in rgba]
+    connected = bytearray(width * height)
+    queue = [i for i in border_indices if background_like[i]]
+    for i in queue:
+        connected[i] = 1
+    cursor = 0
+    while cursor < len(queue):
+        index = queue[cursor]
+        cursor += 1
+        x, y = index % width, index // width
+        for neighbor in ((index - 1 if x else -1), (index + 1 if x + 1 < width else -1),
+                         (index - width if y else -1), (index + width if y + 1 < height else -1)):
+            if neighbor >= 0 and not connected[neighbor] and background_like[neighbor]:
+                connected[neighbor] = 1
+                queue.append(neighbor)
+    subject = bytearray(255 if rgba[i][3] > 32 and not connected[i] else 0 for i in range(width * height))
+    visited = bytearray(width * height)
+    components: list[tuple[list[int], tuple[int, int, int, int], bool]] = []
+    for start, value in enumerate(subject):
+        if not value or visited[start]:
+            continue
+        pixels, component_queue = [], [start]
+        visited[start] = 1
+        min_x = max_x = start % width
+        min_y = max_y = start // width
+        touches_edge = False
+        component_cursor = 0
+        while component_cursor < len(component_queue):
+            index = component_queue[component_cursor]
+            component_cursor += 1
+            pixels.append(index)
+            x, y = index % width, index // width
+            min_x, max_x, min_y, max_y = min(min_x, x), max(max_x, x), min(min_y, y), max(max_y, y)
+            touches_edge = touches_edge or x == 0 or y == 0 or x == width - 1 or y == height - 1
+            for neighbor in ((index - 1 if x else -1), (index + 1 if x + 1 < width else -1),
+                             (index - width if y else -1), (index + width if y + 1 < height else -1)):
+                if neighbor >= 0 and subject[neighbor] and not visited[neighbor]:
+                    visited[neighbor] = 1
+                    component_queue.append(neighbor)
+        components.append((pixels, (min_x, min_y, max_x + 1, max_y + 1), touches_edge))
+    if components:
+        def component_score(component):
+            pixels, box, touches_edge = component
+            center_x, center_y = (box[0] + box[2]) / 2 / width, (box[1] + box[3]) / 2 / height
+            centrality = max(.15, 1 - math.hypot(center_x - .5, center_y - .5))
+            return len(pixels) * centrality * (.005 if touches_edge else 1)
+
+        primary = max(components, key=component_score)
+        primary_pixels, primary_box, _ = primary
+        pad_x, pad_y = (primary_box[2] - primary_box[0]) * .06, (primary_box[3] - primary_box[1]) * .06
+        keep_box = (primary_box[0] - pad_x, primary_box[1] - pad_y,
+                    primary_box[2] + pad_x, primary_box[3] + pad_y)
+        kept = bytearray(width * height)
+        minimum_piece = max(3, round(len(primary_pixels) * .004))
+        for pixels, box, touches_edge in components:
+            center_x, center_y = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+            if (pixels is primary_pixels or (not touches_edge and len(pixels) >= minimum_piece and
+                                             keep_box[0] <= center_x <= keep_box[2] and keep_box[1] <= center_y <= keep_box[3])):
+                for index in pixels:
+                    kept[index] = 255
+        subject = kept
+    mask_small = Image.frombytes("L", (width, height), bytes(subject))
+    bbox_small = mask_small.getbbox()
+    if not bbox_small:
+        return source, {"mode": "subject", "applied": False, "reason": "subject-not-found"}
+    foreground_ratio = sum(1 for value in subject if value) / max(1, width * height)
+    if foreground_ratio < .004 or foreground_ratio > .94:
+        return source, {"mode": "subject", "applied": False, "reason": "low-confidence"}
+    left, top, right, bottom = bbox_small
+    margin = max(1, round(max(right - left, bottom - top) * margin_percent / 100))
+    left, top, right, bottom = max(0, left - margin), max(0, top - margin), min(width, right + margin), min(height, bottom + margin)
+    original_box = (max(0, round(left / scale)), max(0, round(top / scale)),
+                    min(original_width, round(right / scale)), min(original_height, round(bottom / scale)))
+    full_mask = mask_small.resize(source.size, Image.Resampling.NEAREST)
+    isolated = source.copy()
+    isolated.putalpha(ImageChops.multiply(source.getchannel("A"), full_mask))
+    cropped = isolated.crop(original_box)
+    return cropped, {"mode": "subject", "applied": True, "box": list(original_box),
+                     "originalWidth": original_width, "originalHeight": original_height,
+                     "marginPercent": margin_percent}
+
+
 @app.post("/api/analyze")
 @login_required
 def analyze(user: User):
@@ -986,11 +1159,16 @@ def analyze(user: User):
         with Image.open(upload.stream) as image:
             if image.width * image.height > 30_000_000:
                 return jsonify({"error": "图片像素过大"}), 400
-            rows = min(max(requested_rows or round(columns * image.height / image.width), 8), 128)
-            result = quantize_pattern(image, columns, rows, request.form.get("dither") == "true", max_colors)
+            crop_mode = request.form.get("cropMode", "subject")
+            margin_percent = min(max(int(request.form.get("cropMargin", 8)), 0), 25)
+            prepared, crop = isolate_subject(image, margin_percent) if crop_mode == "subject" else (
+                ImageOps.exif_transpose(image).convert("RGBA"), {"mode": "full", "applied": False})
+            rows = min(max(requested_rows or round(columns * prepared.height / prepared.width), 8), 128)
+            result = quantize_pattern(prepared, columns, rows, request.form.get("dither") == "true", max_colors)
+            result["crop"] = crop
     except (ValueError, OSError) as error:
         return jsonify({"error": f"无法识别图片：{error}"}), 400
-    audit("ai.quantize", {"columns": columns, "rows": rows, "colors": len(result["items"])})
+    audit("ai.quantize", {"columns": columns, "rows": rows, "colors": len(result["items"]), "crop": result["crop"]})
     db.session.commit()
     return jsonify({"status": "ok", "result": result, "message": "已完成色卡匹配，请确认后再保存或扣库存"})
 
@@ -1094,15 +1272,7 @@ def delete_account(user: User):
     body = json_body()
     if body.get("confirm") != "DELETE" or not check_password_hash(user.password_hash, str(body.get("password", ""))):
         return jsonify({"error": "密码或确认文本不正确"}), 400
-    blueprint_ids = [bp.id for bp in Blueprint.query.filter_by(user_id=user.id).all()]
-    if blueprint_ids:
-        BlueprintItem.query.filter(BlueprintItem.blueprint_id.in_(blueprint_ids)).delete(synchronize_session=False)
-    Blueprint.query.filter_by(user_id=user.id).delete()
-    InventoryTransaction.query.filter_by(user_id=user.id).delete()
-    Inventory.query.filter_by(user_id=user.id).delete()
-    PasswordReset.query.filter_by(user_id=user.id).delete()
-    AuditLog.query.filter_by(user_id=user.id).delete()
-    db.session.delete(user)
+    remove_user_data(user)
     db.session.commit()
     session.clear()
     return jsonify({"status": "ok"})
