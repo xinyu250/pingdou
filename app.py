@@ -13,6 +13,7 @@ import re
 import secrets
 import smtplib
 import threading
+import unicodedata
 import uuid
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
@@ -467,7 +468,7 @@ def health():
     db.session.execute(db.select(func.count(User.id))).scalar()
     durable = bool(os.getenv("DATABASE_URL"))
     return jsonify({"status": "ok", "database": "postgresql" if durable else "sqlite", "durable": durable,
-                    "version": os.getenv("APP_VERSION", "2.3.0")})
+                    "version": os.getenv("APP_VERSION", "2.3.1")})
 
 
 @app.get("/api/session")
@@ -1242,37 +1243,74 @@ def isolate_subject(image: Image.Image, margin_percent: int = 8) -> tuple[Image.
 
 def parse_legend_ocr(texts: list[str], boxes: Any, valid_codes: set[str]) -> list[dict[str, Any]]:
     tokens = []
+    inline_pairs: list[dict[str, Any]] = []
     for text_value, box in zip(texts, boxes):
-        text_value = str(text_value).strip().upper().replace(" ", "")
+        text_value = unicodedata.normalize("NFKC", str(text_value)).strip().upper()
+        text_value = re.sub(r"\s+", "", text_value)
         center_x = sum(float(point[0]) for point in box) / len(box)
         center_y = sum(float(point[1]) for point in box) / len(box)
         width = max(float(point[0]) for point in box) - min(float(point[0]) for point in box)
         height = max(float(point[1]) for point in box) - min(float(point[1]) for point in box)
-        tokens.append({"text": text_value, "x": center_x, "y": center_y, "width": width, "height": height})
-    codes = [token for token in tokens if token["text"] in valid_codes]
-    numbers = [token for token in tokens if re.fullmatch(r"\d{1,6}", token["text"])]
-    candidates = []
+        clean = re.sub(r"[^A-Z0-9X×*]", "", text_value)
+        inline = re.fullmatch(r"([ABCDEFGHM]\d{1,2})[X×*](\d{1,6})", clean)
+        if inline and inline.group(1) in valid_codes and int(inline.group(2)) > 0:
+            inline_pairs.append({"id": inline.group(1), "quantity": int(inline.group(2)),
+                                 "_x": center_x, "_y": center_y})
+            continue
+        code_text = re.sub(r"[^A-Z0-9]", "", clean)
+        quantity_text = clean.replace("O", "0").replace("I", "1").replace("L", "1")
+        quantity_match = re.fullmatch(r"([X×*]?)(\d{1,6})", quantity_text)
+        tokens.append({"text": text_value, "code": code_text if code_text in valid_codes else None,
+                       "quantity": int(quantity_match.group(2)) if quantity_match else None,
+                       "quantity_prefixed": bool(quantity_match and quantity_match.group(1)),
+                       "x": center_x, "y": center_y, "width": max(width, 1), "height": max(height, 1)})
+    codes = [token for token in tokens if token["code"]]
+    numbers = [token for token in tokens if token["quantity"] is not None and token["quantity"] > 0]
+
+    # Common compact legend: color code above, x/count directly below it.
+    vertical_pairs = []
+    used_numbers: set[int] = set()
+    for code in sorted(codes, key=lambda item: (item["y"], item["x"])):
+        matches = [(index, number) for index, number in enumerate(numbers) if index not in used_numbers
+                   and number["y"] > code["y"] + min(code["height"], number["height"]) * .35
+                   and number["y"] - code["y"] <= max(90, code["height"] * 4.5)
+                   and abs(number["x"] - code["x"]) <= max(28, (code["width"] + number["width"]) * .55)]
+        if matches:
+            index, number = min(matches, key=lambda item: (
+                abs(item[1]["x"] - code["x"]), item[1]["y"] - code["y"],
+                0 if item[1]["quantity_prefixed"] else 1))
+            used_numbers.add(index)
+            vertical_pairs.append({"code": code, "number": number})
+
+    # Traditional table legend: color code on the left, count on the right.
+    horizontal_candidates = []
     for code in codes:
         matches = [number for number in numbers if number["x"] > code["x"] + code["width"] * .4
                    and abs(number["y"] - code["y"]) <= max(28, code["height"] * 1.25)
                    and number["x"] - code["x"] < 420]
         if matches:
             number = min(matches, key=lambda item: (abs(item["y"] - code["y"]), item["x"] - code["x"]))
-            candidates.append({"code": code, "number": number})
+            horizontal_candidates.append({"code": code, "number": number})
     groups: dict[tuple[int, int], list[dict[str, Any]]] = {}
-    for pair in candidates:
+    for pair in horizontal_candidates:
         key = (round(pair["code"]["x"] / 55), round(pair["number"]["x"] / 55))
         groups.setdefault(key, []).append(pair)
-    if not groups:
-        return []
-    best = max(groups.values(), key=lambda group: (len({item["code"]["text"] for item in group}),
-                                                     sum(item["code"]["x"] for item in group) / len(group)))
+    horizontal_pairs = max(groups.values(), key=lambda group: (
+        len({item["code"]["code"] for item in group}),
+        sum(item["code"]["x"] for item in group) / len(group))) if groups else []
+
+    pairs = vertical_pairs if len({pair["code"]["code"] for pair in vertical_pairs}) >= len({
+        pair["code"]["code"] for pair in horizontal_pairs}) else horizontal_pairs
     unique: dict[str, dict[str, Any]] = {}
-    for pair in sorted(best, key=lambda item: item["code"]["y"]):
-        code, quantity = pair["code"]["text"], int(pair["number"]["text"])
+    for item in inline_pairs:
+        unique.setdefault(item["id"], item)
+    for pair in sorted(pairs, key=lambda item: (item["code"]["y"], item["code"]["x"])):
+        code, quantity = pair["code"]["code"], pair["number"]["quantity"]
         if quantity > 0 and code not in unique:
-            unique[code] = {"id": code, "quantity": quantity}
-    return list(unique.values()) if len(unique) >= 2 else []
+            unique[code] = {"id": code, "quantity": quantity,
+                            "_x": pair["code"]["x"], "_y": pair["code"]["y"]}
+    ordered = sorted(unique.values(), key=lambda item: (round(item["_y"] / 30), item["_x"]))
+    return [{"id": item["id"], "quantity": item["quantity"]} for item in ordered]
 
 
 def extract_legend_items(image: Image.Image) -> list[dict[str, Any]]:
@@ -1281,15 +1319,33 @@ def extract_legend_items(image: Image.Image) -> list[dict[str, Any]]:
     import numpy as np
 
     prepared = ImageOps.exif_transpose(image).convert("RGB")
-    prepared.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+    prepared.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
+    if min(prepared.size) < 180:
+        scale = min(3.0, 180 / max(1, min(prepared.size)))
+        prepared = prepared.resize((round(prepared.width * scale), round(prepared.height * scale)),
+                                   Image.Resampling.LANCZOS)
     with OCR_LOCK:
-        if OCR_ENGINE is None:
+        try:
+            if OCR_ENGINE is None:
+                OCR_ENGINE = RapidOCR()
+            ocr_result = OCR_ENGINE(np.asarray(prepared))
+        except Exception:
+            # A stale ONNX session can occasionally fail after a free instance wakes up.
             OCR_ENGINE = RapidOCR()
-        ocr_result = OCR_ENGINE(np.asarray(prepared))
+            ocr_result = OCR_ENGINE(np.asarray(prepared))
     if not ocr_result or not ocr_result.txts:
         return []
     valid_codes = {row.code for row in PaletteColor.query.all()}
-    return parse_legend_ocr(list(ocr_result.txts), ocr_result.boxes, valid_codes)
+    items = parse_legend_ocr(list(ocr_result.txts), ocr_result.boxes, valid_codes)
+    if items:
+        return items
+    # Low contrast backgrounds and watermarks sometimes hide either the top or bottom row.
+    contrast = ImageOps.autocontrast(ImageOps.grayscale(prepared)).convert("RGB")
+    with OCR_LOCK:
+        retry_result = OCR_ENGINE(np.asarray(contrast))
+    if not retry_result or not retry_result.txts:
+        return []
+    return parse_legend_ocr(list(retry_result.txts), retry_result.boxes, valid_codes)
 
 
 @app.post("/api/analyze")

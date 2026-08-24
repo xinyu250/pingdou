@@ -170,6 +170,25 @@ class ProductionFlowTest(unittest.TestCase):
         self.assertEqual(items, [{"id": "A5", "quantity": 98}, {"id": "D11", "quantity": 199},
                                  {"id": "E23", "quantity": 147}])
 
+    def test_legend_parser_reads_horizontal_cards_with_counts_below(self):
+        def box(x, y, width=36, height=19):
+            return [[x, y], [x + width, y], [x + width, y + height], [x, y + height]]
+
+        texts = ["A16", "A21", "A24", "A26", "A5", "G10", "G13", "G21", "G6", "H7",
+                 "x3", "x18", "x8", "x5", "x243", "x85", "x6", "x4", "x155", "x277"]
+        boxes = [box(20 + index * 53, 22) for index in range(10)]
+        boxes += [box(27 + index * 53, 61, 30, 17) for index in range(10)]
+        expected = [("A16", 3), ("A21", 18), ("A24", 8), ("A26", 5), ("A5", 243),
+                    ("G10", 85), ("G13", 6), ("G21", 4), ("G6", 155), ("H7", 277)]
+        items = parse_legend_ocr(texts, boxes, {code for code, _quantity in expected})
+        self.assertEqual([(item["id"], item["quantity"]) for item in items], expected)
+
+    def test_legend_parser_accepts_inline_and_multiplication_variants(self):
+        box = [[[10, 10], [80, 10], [80, 30], [10, 30]],
+               [[10, 45], [50, 45], [50, 65], [10, 65]]]
+        items = parse_legend_ocr(["A16×3", "H7*277"], box, {"A16", "H7"})
+        self.assertEqual(items, [{"id": "A16", "quantity": 3}, {"id": "H7", "quantity": 277}])
+
     def test_blueprint_create_request_key_prevents_duplicate_saves(self):
         request_key = f"save-{uuid.uuid4()}"
         payload = {"name": "防重复图纸", "items": '[{"id":"A1","quantity":12}]',
