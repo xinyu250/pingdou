@@ -3,5 +3,23 @@ services:
     name: pingdou
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 --access-logfile -
+    healthCheckPath: /api/health
     plan: free
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_VERSION
+        value: 2.0.0
+      - key: APP_URL
+        value: https://pingdou.onrender.com
+      - key: APP_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: OWNER_EMAIL
+        sync: false
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: OWNER_NAME
+        value: 豆仓主人

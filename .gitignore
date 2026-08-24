@@ -3,10 +3,16 @@ __pycache__/
 .venv/
 venv/
 .env
+.env.*
+!.env.example
 *.log
 build/
 dist/
 *.spec
+instance/
+backups/
+.playwright-cli/
+output/
 # 本地运行数据；演示/线上以 seed_data.json 为准，更新演示请复制覆盖 seed_data.json
 data.json
 uploads/
