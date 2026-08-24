@@ -468,7 +468,7 @@ def health():
     db.session.execute(db.select(func.count(User.id))).scalar()
     durable = bool(os.getenv("DATABASE_URL"))
     return jsonify({"status": "ok", "database": "postgresql" if durable else "sqlite", "durable": durable,
-                    "version": os.getenv("APP_VERSION", "2.3.1")})
+                    "version": os.getenv("APP_VERSION", "2.3.2")})
 
 
 @app.get("/api/session")
@@ -1315,37 +1315,83 @@ def parse_legend_ocr(texts: list[str], boxes: Any, valid_codes: set[str]) -> lis
 
 def extract_legend_items(image: Image.Image) -> list[dict[str, Any]]:
     global OCR_ENGINE
-    from rapidocr import RapidOCR
+    from rapidocr import __file__ as rapidocr_file
+    from rapidocr.ch_ppocr_rec import TextRecInput, TextRecognizer
+    from rapidocr.main import DEFAULT_CFG_PATH
+    from rapidocr.utils.parse_parameters import ParseParams
     import numpy as np
 
     prepared = ImageOps.exif_transpose(image).convert("RGB")
     prepared.thumbnail((1600, 1600), Image.Resampling.LANCZOS)
-    if min(prepared.size) < 180:
-        scale = min(3.0, 180 / max(1, min(prepared.size)))
-        prepared = prepared.resize((round(prepared.width * scale), round(prepared.height * scale)),
-                                   Image.Resampling.LANCZOS)
+    pixels = np.asarray(prepared)
+    spread = pixels.max(axis=2).astype(int) - pixels.min(axis=2).astype(int)
+    mean = pixels.mean(axis=2)
+    card_mask = (spread > 24) | (mean < 75)
+
+    def runs(flags: Any, minimum: int) -> list[tuple[int, int]]:
+        result, start = [], None
+        for index, active in enumerate(list(flags) + [False]):
+            if active and start is None:
+                start = index
+            elif not active and start is not None:
+                if index - start >= minimum:
+                    result.append((start, index))
+                start = None
+        return result
+
+    row_scores = card_mask.sum(axis=1)
+    row_threshold = max(8, float(row_scores.max(initial=0)) * .30)
+    card_bands = runs(row_scores > row_threshold, 8)
+    crops, positions = [], []
+    for band_index, (top, bottom) in enumerate(card_bands[:12]):
+        column_scores = card_mask[top:bottom].mean(axis=0)
+        spans = runs(column_scores > .45, 12)
+        lower_bound = card_bands[band_index + 1][0] if band_index + 1 < len(card_bands) else prepared.height
+        for left, right in spans[:40]:
+            x0, x1 = max(0, left - 4), min(prepared.width, right + 4)
+            code_crop = ImageOps.grayscale(prepared.crop((x0, max(0, top - 5), x1, min(prepared.height, bottom + 4))))
+            code_crop = code_crop.point(lambda value: 0 if value < 130 else 255).convert("RGB")
+            quantity_crop = prepared.crop((x0, min(prepared.height - 1, bottom + 1), x1,
+                                           max(min(prepared.height, lower_bound), bottom + 2)))
+            if quantity_crop.height < 8:
+                continue
+            crops.extend([np.asarray(code_crop), np.asarray(quantity_crop)])
+            positions.extend([(left, top, right, bottom), (left, bottom, right, lower_bound)])
+
     with OCR_LOCK:
-        try:
-            if OCR_ENGINE is None:
-                OCR_ENGINE = RapidOCR()
-            ocr_result = OCR_ENGINE(np.asarray(prepared))
-        except Exception:
-            # A stale ONNX session can occasionally fail after a free instance wakes up.
-            OCR_ENGINE = RapidOCR()
-            ocr_result = OCR_ENGINE(np.asarray(prepared))
-    if not ocr_result or not ocr_result.txts:
-        return []
+        if OCR_ENGINE is None:
+            cfg = ParseParams.load(DEFAULT_CFG_PATH)
+            cfg.Global.model_root_dir = Path(rapidocr_file).parent / "models"
+            cfg.Rec.engine_cfg = cfg.EngineConfig[cfg.Rec.engine_type.value]
+            cfg.Rec.font_path = cfg.Global.font_path
+            cfg.Rec.model_root_dir = cfg.Global.model_root_dir
+            OCR_ENGINE = TextRecognizer(cfg.Rec)
+        card_result = OCR_ENGINE(TextRecInput(img=crops)) if crops else None
+
     valid_codes = {row.code for row in PaletteColor.query.all()}
-    items = parse_legend_ocr(list(ocr_result.txts), ocr_result.boxes, valid_codes)
+    boxes = [[[left, top], [right, top], [right, bottom], [left, bottom]]
+             for left, top, right, bottom in positions]
+    items = parse_legend_ocr(list(card_result.txts), boxes, valid_codes) if card_result else []
     if items:
         return items
-    # Low contrast backgrounds and watermarks sometimes hide either the top or bottom row.
-    contrast = ImageOps.autocontrast(ImageOps.grayscale(prepared)).convert("RGB")
+
+    # Lightweight fallback for classic table legends such as "A5  98" per row.
+    dark_mask = mean < 185
+    dark_scores = dark_mask.sum(axis=1)
+    text_bands = runs(dark_scores > max(4, float(dark_scores.max(initial=0)) * .08), 5)
+    line_crops = [np.asarray(prepared.crop((0, max(0, top - 3), prepared.width,
+                                           min(prepared.height, bottom + 3))))
+                  for top, bottom in text_bands[:80]]
     with OCR_LOCK:
-        retry_result = OCR_ENGINE(np.asarray(contrast))
-    if not retry_result or not retry_result.txts:
-        return []
-    return parse_legend_ocr(list(retry_result.txts), retry_result.boxes, valid_codes)
+        line_result = OCR_ENGINE(TextRecInput(img=line_crops)) if line_crops else None
+    unique: dict[str, dict[str, Any]] = {}
+    for line in (line_result.txts if line_result else []):
+        clean = unicodedata.normalize("NFKC", str(line)).upper()
+        for match in re.finditer(r"([ABCDEFGHM]\d{1,2})[^0-9]+[X×*]?(\d{1,6})", clean):
+            code, quantity = match.group(1), int(match.group(2))
+            if code in valid_codes and quantity > 0:
+                unique.setdefault(code, {"id": code, "quantity": quantity})
+    return list(unique.values())
 
 
 @app.post("/api/analyze")
