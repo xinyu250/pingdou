@@ -20,6 +20,10 @@ const state = {
   generatorMode: 'legend',
   generatorSaving: false,
   generatorSaveKey: '',
+  legendCropFile: null,
+  legendCropUrl: '',
+  legendCropRect: null,
+  legendCropDrag: null,
   blueprintRecognition: null,
   detail: null,
   detailProgress: null,
@@ -52,6 +56,7 @@ const esc = (value = '') => String(value)
 const number = value => Number(value || 0).toLocaleString('zh-CN');
 const when = value => value ? new Date(value).toLocaleString('zh-CN', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
 const operationName = op => ({checkin:'入库', checkout:'出库', set:'盘点', undo:'撤销', initialize:'初始化', clear:'清空'})[op] || op;
+const publicRemark = value => String(value || '').includes('旧版数据迁移') ? '初始库存' : String(value || '');
 
 function toast(message, type = 'success') {
   const node = document.createElement('div');
@@ -93,6 +98,28 @@ async function optimizeUpload(file) {
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.88));
     return blob ? new File([blob],file.name.replace(/\.[^.]+$/,'.webp'),{type:'image/webp'}) : file;
   } catch (_error) { return file; }
+}
+
+async function cropImageFile(file, rect) {
+  const bitmap=await createImageBitmap(file), canvas=document.createElement('canvas');
+  const sx=Math.max(0,Math.round(rect.x*bitmap.width)), sy=Math.max(0,Math.round(rect.y*bitmap.height));
+  const sw=Math.max(1,Math.min(bitmap.width-sx,Math.round(rect.w*bitmap.width)));
+  const sh=Math.max(1,Math.min(bitmap.height-sy,Math.round(rect.h*bitmap.height)));
+  canvas.width=sw; canvas.height=sh; canvas.getContext('2d').drawImage(bitmap,sx,sy,sw,sh,0,0,sw,sh); bitmap.close();
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.94));
+  if (!blob) throw new Error('无法裁剪图例，请重新选择图片');
+  return new File([blob],'legend-selection.webp',{type:'image/webp'});
+}
+
+async function analyzeGeneratorFile(file, mode) {
+  state.generatorMode=mode; state.generatorBusy=true; renderPage();
+  const fd=new FormData();
+  fd.set('image',file); fd.set('recognitionMode',mode); fd.set('columns','48'); fd.set('rows','0');
+  fd.set('maxColors','0'); fd.set('cropMode','subject'); fd.set('cropMargin','8'); fd.set('dither','false');
+  try {
+    const result=await api('/api/analyze',{method:'POST',body:fd});
+    state.generatorResult=result.result; toast(result.message);
+  } finally { state.generatorBusy=false; renderPage(); }
 }
 
 function loadingPage() {
@@ -238,7 +265,7 @@ function renderInventory() {
   const chips = series.map(value => `<button class="chip ${state.inventorySeries === value ? 'active':''}" data-action="inventory-series" data-value="${esc(value)}">${esc(value)}</button>`).join('');
   const cards = items.map(item => `<button class="color-card" style="--swatch:${item.hex}" data-action="open-transaction" data-code="${item.id}" data-operation="set"><div class="color-card-top"><span class="code-cell"><span class="swatch"></span>${item.id}</span><span class="badge ${item.status === '库存充足' ? 'ok' : item.status === '欠库存' ? 'danger':'warn'}">${item.status}</span></div><strong>${number(item.quantity)}</strong><small>预警线 ${number(item.threshold)}</small></button>`).join('');
   return `
-    <div class="page-head"><div><h2>我的豆仓</h2><p>共 ${number(all.reduce((sum,item)=>sum+item.quantity,0))} 粒 · 当前显示 ${items.length} 个色号</p></div><div class="inventory-actions"><button class="btn btn-quiet" data-action="navigate" data-page="workbench">查看补豆清单</button><button class="btn btn-secondary" data-action="open-transaction" data-operation="checkout">记录出库</button><button class="btn btn-primary" data-action="open-transaction" data-operation="checkin">补豆入库</button></div></div>
+    <div class="page-head"><div><h2>我的豆仓</h2><p>共 ${number(all.reduce((sum,item)=>sum+item.quantity,0))} 粒 · 当前显示 ${items.length} 个色号</p></div><div class="inventory-actions"><button class="btn btn-quiet" data-action="navigate" data-page="workbench">查看补豆清单</button><button class="btn btn-secondary" data-action="open-transaction" data-operation="checkout">记录出库</button><button class="btn btn-soft" data-action="starter-kit">＋ 221 色套装</button><button class="btn btn-primary" data-action="open-transaction" data-operation="checkin">补豆入库</button></div></div>
     <div class="toolbar"><input class="search" id="inventory-search" type="text" placeholder="搜索色号，如 H2" value="${esc(state.inventorySearch)}"><select id="inventory-sort"><option value="default">默认排序</option><option value="asc" ${state.inventorySort==='asc'?'selected':''}>库存由少到多</option><option value="desc" ${state.inventorySort==='desc'?'selected':''}>库存由多到少</option><option value="low" ${state.inventorySort==='low'?'selected':''}>只看需补豆</option></select></div>
     <div class="chips" style="margin-bottom:16px">${chips}</div>
     <div class="inventory-grid">${cards || `<div class="empty">没有匹配的色号</div>`}</div>`;
@@ -251,17 +278,17 @@ function renderWorkbench() {
   const groups = [];
   const seen = new Set();
   history.forEach(row => { if (!seen.has(row.batchId)) {groups.push(row); seen.add(row.batchId);} });
-  const historyRows = groups.slice(0,60).map(row => `<tr><td><span class="badge ${row.delta<0?'warn':'ok'}">${operationName(row.operation)}</span></td><td>${esc(row.code)} 等</td><td>${esc(row.remark || '-')}</td><td class="muted">${when(row.createdAt)}</td><td><button class="btn btn-sm btn-secondary" data-action="undo" data-batch="${row.batchId}" ${row.undone || row.operation==='undo' ? 'disabled':''}>撤销批次</button></td></tr>`).join('');
+  const historyRows = groups.slice(0,60).map(row => `<tr><td><span class="flow-badge flow-${row.operation}">${operationName(row.operation)}</span></td><td class="flow-code">${esc(row.code)} 等</td><td class="flow-remark">${esc(publicRemark(row.remark) || '-')}</td><td class="muted nowrap">${when(row.createdAt)}</td><td><button class="btn btn-sm btn-secondary" data-action="undo" data-batch="${row.batchId}" ${row.undone || row.operation==='undo' ? 'disabled':''}>撤销</button></td></tr>`).join('');
   return `
     <div class="page-head"><div><h2>拼豆工作台</h2><p>支持手动录入、批量粘贴和 CSV 导入。</p></div><div class="button-row"><button class="btn btn-secondary" data-action="open-transaction" data-operation="checkout">记录出库</button><button class="btn btn-primary" data-action="open-transaction" data-operation="checkin">补豆入库</button></div></div>
     <div class="grid-3" style="margin-bottom:18px">
       <button class="panel panel-body text-right" data-action="open-transaction" data-operation="checkout"><strong>扣库存</strong><p class="muted">手动、批量或 CSV 记录出库</p><span class="btn btn-accent">开始出库 →</span></button>
       <button class="panel panel-body text-right" data-action="navigate" data-page="generator"><strong>智能识图</strong><p class="muted">识别图片色号并生成图纸</p><span class="btn btn-soft">打开制图 →</span></button>
-      <button class="panel panel-body text-right" data-action="open-transaction" data-operation="checkin"><strong>加库存</strong><p class="muted">补豆、套装和批量入库</p><span class="btn btn-primary">开始入库 →</span></button>
+      <div class="panel panel-body quick-stock-card"><strong>加库存</strong><p class="muted">单色补豆、批量入库或整套新手包</p><div class="button-row"><button class="btn btn-secondary" data-action="open-transaction" data-operation="checkin">普通入库</button><button class="btn btn-primary" data-action="starter-kit">221 色套装</button></div></div>
     </div>
     <div class="grid-2">
       <section class="panel"><div class="panel-head"><h3>补豆清单</h3><div class="button-row"><span class="badge warn">${restock.totalColors || 0} 色 · ${restock.totalGrams || 0}g</span><button class="btn btn-sm btn-secondary" data-action="copy-restock">复制口令</button></div></div><div class="table-wrap">${restockRows ? `<table><thead><tr><th>色号</th><th>现有</th><th>需补</th><th>建议克数</th></tr></thead><tbody>${restockRows}</tbody></table>`:'<div class="empty"><strong>库存很充足</strong>目前没有低于预警线的色号。</div>'}</div></section>
-      <section class="panel"><div class="panel-head"><h3>出入库流水</h3><a href="/api/inventory/export.csv" class="btn btn-sm btn-secondary">导出库存</a></div><div class="table-wrap">${historyRows ? `<table><thead><tr><th>类型</th><th>色号</th><th>备注</th><th>时间</th><th></th></tr></thead><tbody>${historyRows}</tbody></table>`:'<div class="empty">暂无流水</div>'}</div></section>
+      <section class="panel"><div class="panel-head"><h3>出入库流水</h3><a href="/api/inventory/export.csv" class="btn btn-sm btn-secondary">导出库存</a></div><div class="table-wrap">${historyRows ? `<table class="transaction-table"><colgroup><col class="flow-type-col"><col class="flow-code-col"><col><col class="flow-time-col"><col class="flow-action-col"></colgroup><thead><tr><th>类型</th><th>色号</th><th>备注</th><th>时间</th><th></th></tr></thead><tbody>${historyRows}</tbody></table>`:'<div class="empty">暂无流水</div>'}</div></section>
     </div>`;
 }
 
@@ -275,7 +302,7 @@ function renderBlueprints() {
   const cards = items.map(bp => `<article class="blueprint-card" style="position:relative"><input class="blueprint-select" type="checkbox" data-action="select-blueprint" data-id="${bp.id}" ${state.selectedBlueprints.has(bp.id)?'checked':''}><div class="blueprint-image" data-action="blueprint-detail" data-id="${bp.id}">${bp.imageUrl ? `<img src="${bp.imageUrl}" alt="${esc(bp.name)}">`:'无图纸预览'}</div><div class="blueprint-body"><h3>${esc(bp.name)}</h3><div class="blueprint-meta"><span class="badge ${bp.status==='已拼'||bp.status==='已发布'?'ok':'warn'}">${bp.status}</span><span class="badge">${esc(bp.tag)}</span><span class="badge">${esc(bp.folder)}</span></div><p class="muted">${bp.colorCount} 色 · ${number(bp.totalBeads)} 粒 · ${bp.craftMinutes || 0} 分钟</p><div class="button-row"><button class="btn btn-sm btn-secondary" data-action="blueprint-detail" data-id="${bp.id}">查看进度</button><button class="btn btn-sm btn-accent" data-action="consume-blueprint" data-id="${bp.id}">记录出库</button></div></div></article>`).join('');
   const statuses = ['全部','待拼','拼制中','已拼','已发布'].map(value => `<button class="chip ${state.blueprintStatus===value?'active':''}" data-action="blueprint-status" data-value="${value}">${value}</button>`).join('');
   return `
-    <div class="page-head"><div><h2>我的图纸</h2><p>${all.length} 张图纸 · ${all.filter(bp=>bp.status==='已拼'||bp.status==='已发布').length} 张已完成</p></div><div class="button-row"><button class="btn btn-secondary" data-action="calculate-blueprints" ${state.selectedBlueprints.size?'':'disabled'}>消耗计算（${state.selectedBlueprints.size}）</button><button class="btn btn-primary" data-action="open-blueprint-editor">＋ 上传图纸</button></div></div>
+    <div class="page-head"><div><h2>我的图纸</h2><p>${all.length} 张图纸 · ${all.filter(bp=>bp.status==='已拼'||bp.status==='已发布').length} 张已完成</p></div><div class="button-row"><button class="btn btn-secondary" data-action="calculate-blueprints" ${state.selectedBlueprints.size?'':'disabled'}>${state.selectedBlueprints.size?`计算用豆 · 已选 ${state.selectedBlueprints.size} 张`:'计算用豆'}</button><button class="btn btn-primary" data-action="open-blueprint-editor">＋ 上传图纸</button></div></div>
     <div class="toolbar"><div class="chips">${statuses}</div><input id="blueprint-search" class="search" type="text" placeholder="搜索图纸名称" value="${esc(state.blueprintSearch)}"></div>
     <div class="blueprint-grid">${cards || `<div class="empty"><strong>没有找到图纸</strong>上传已有图纸，或先用智能制图生成。</div>`}</div>`;
 }
@@ -292,7 +319,7 @@ function renderGenerator() {
         <form id="generator-form">
           <fieldset class="recognition-picker"><legend>这张图纸是哪一种？</legend><label><input type="radio" name="recognitionMode" value="legend" ${state.generatorMode==='legend'?'checked':''}><span><strong>带色号图例</strong><small>直接读取图例里的色号和数量</small></span></label><label><input type="radio" name="recognitionMode" value="pattern" ${state.generatorMode==='pattern'?'checked':''}><span><strong>只有图案</strong><small>提取主体后识别所用颜色</small></span></label></fieldset>
           <input type="hidden" name="columns" value="48"><input type="hidden" name="rows" value="0"><input type="hidden" name="maxColors" value="0"><input type="hidden" name="cropMode" value="subject"><input type="hidden" name="cropMargin" value="8">
-          <label class="dropzone ${state.generatorBusy?'is-busy':''}"><input class="file-overlay" type="file" name="image" accept="image/jpeg,image/png,image/webp" required ${state.generatorBusy?'disabled':''}>${state.generatorBusy?'<span class="spinner dark"></span><strong>正在识别图纸</strong><small>带图例的图纸首次识别可能需要一些时间</small>':'<span class="file-cta">选择图纸图片</span><strong>也可以直接拖到这里</strong><small id="generator-file-name">选择后会自动开始识别 · 最大 '+(state.session.maxUploadMb || 8)+'MB</small>'}</label>
+          <label class="dropzone ${state.generatorBusy?'is-busy':''}"><input class="file-overlay" type="file" name="image" accept="image/jpeg,image/png,image/webp" required ${state.generatorBusy?'disabled':''}>${state.generatorBusy?'<span class="spinner dark"></span><strong>正在识别图纸</strong><small>正在整理色号和数量，请稍候</small>':'<span class="file-cta">选择图纸图片</span><strong>也可以直接拖到这里</strong><small id="generator-file-name">'+(state.generatorMode==='legend'?'选择后框选图例区域':'选择后自动提取主体')+' · 最大 '+(state.session.maxUploadMb || 8)+'MB</small>'}</label>
           <button class="hidden" type="submit">开始识别</button>
         </form>
         <div class="generator-help">${r ? (isLegend?'已读取图例中的色号和数量，你可以在右侧直接修改。':'已提取图案主体并匹配色号，你可以在右侧调整数量。') : '识别完成后会先让你确认，不会自动修改库存。'}</div>
@@ -320,14 +347,35 @@ function renderSettings() {
   return `<div class="page-head"><div><h2>账户与数据</h2><p>管理个人信息、库存规则和数据安全。</p></div></div>
     <div class="grid-2"><section class="panel"><div class="panel-head"><h3>个人设置</h3></div><div class="panel-body"><form id="settings-form"><label class="field"><span>用户名</span><input type="text" name="username" maxlength="40" value="${esc(d.user.username)}" required></label><label class="field"><span>默认低库存预警线</span><input type="number" name="lowThreshold" min="0" value="${d.user.settings.lowThreshold}" required></label><button class="btn btn-primary" type="submit">保存设置</button></form></div></section>
     <section class="panel"><div class="panel-head"><h3>数据状态</h3></div><div class="panel-body"><div class="notice ${prod.durableDatabase?'':'danger'}"><strong>${prod.durableDatabase?'数据已安全保存':'数据存储需要检查'}</strong><br>${prod.durableDatabase?'库存和图纸会随账号持续保留。':'请联系管理员完成在线数据存储配置。'}</div><p><span class="badge ${prod.emailConfigured?'ok':'warn'}">${prod.emailConfigured?'可通过邮件找回密码':'密码找回邮件暂不可用'}</span></p><p class="muted">当前站点：${esc(prod.appUrl || location.origin)}</p></div></section></div>
-    <section class="panel" style="margin-top:18px"><div class="panel-head"><h3>数据管理</h3></div><div class="panel-body">${d.user.isGuest?'<div class="notice"><strong>当前为游客模式</strong><br>你可以使用库存、图纸和智能制图；退出后临时数据会自动清理。</div>':`<div class="setting-section"><h3>库存初始化与导出</h3><p class="muted">给 221 个色号设置统一初始数量，操作会留下完整流水。</p><div class="button-row"><button class="btn btn-secondary" data-action="initialize-inventory">快速设置库存</button><a class="btn btn-secondary" href="/api/inventory/export.csv">导出库存 CSV</a><button class="btn btn-secondary" data-action="export-account">导出完整账户数据</button>${d.user.isAdmin?'<button class="btn btn-soft" data-action="admin-import">迁移旧版数据</button>':''}</div></div><div class="setting-section"><h3 class="danger-text">危险操作</h3><p class="muted">清空会保留审计流水；注销账号会永久删除库存、流水和图纸。</p><div class="button-row"><button class="btn btn-danger" data-action="clear-inventory">清空全部库存</button><button class="btn btn-danger" data-action="delete-account">注销账号</button></div></div>`}</div></section>`;
+    <section class="panel" style="margin-top:18px"><div class="panel-head"><h3>数据管理</h3></div><div class="panel-body">${d.user.isGuest?'<div class="notice"><strong>当前为游客模式</strong><br>你可以使用库存、图纸和智能制图；退出后临时数据会自动清理。</div>':`<div class="setting-section"><h3>库存初始化与导出</h3><p class="muted">给 221 个色号设置统一初始数量，操作会留下完整流水。</p><div class="button-row"><button class="btn btn-secondary" data-action="initialize-inventory">快速设置库存</button><a class="btn btn-secondary" href="/api/inventory/export.csv">导出库存 CSV</a><button class="btn btn-secondary" data-action="export-account">导出完整账户数据</button>${d.user.isAdmin?'<button class="btn btn-soft" data-action="admin-import">导入数据备份</button>':''}</div></div><div class="setting-section"><h3 class="danger-text">危险操作</h3><p class="muted">清空会保留审计流水；注销账号会永久删除库存、流水和图纸。</p><div class="button-row"><button class="btn btn-danger" data-action="clear-inventory">清空全部库存</button><button class="btn btn-danger" data-action="delete-account">注销账号</button></div></div>`}</div></section>`;
 }
 
 function openModal(title, body, foot = '', large = false) {
   modalRoot.innerHTML = `<div class="modal-backdrop" data-action="modal-backdrop"><section class="modal ${large?'large':''}" role="dialog" aria-modal="true"><header class="modal-head"><h2>${title}</h2><button class="icon-btn" data-action="close-modal" aria-label="关闭">×</button></header><div class="modal-body">${body}</div>${foot?`<footer class="modal-foot">${foot}</footer>`:''}</section></div>`;
 }
 
-function closeModal() { modalRoot.innerHTML = ''; state.detail = null; state.detailProgress = null; state.blueprintRecognition = null; }
+function clearLegendCrop() {
+  if (state.legendCropUrl) URL.revokeObjectURL(state.legendCropUrl);
+  state.legendCropFile=null; state.legendCropUrl=''; state.legendCropRect=null; state.legendCropDrag=null;
+  const input=document.querySelector('#generator-form input[name="image"]');
+  if (input) input.value='';
+}
+
+function closeModal() { clearLegendCrop(); modalRoot.innerHTML = ''; state.detail = null; state.detailProgress = null; state.blueprintRecognition = null; }
+
+function openLegendCropDialog(file) {
+  clearLegendCrop(); state.legendCropFile=file; state.legendCropUrl=URL.createObjectURL(file);
+  openModal('框选图例区域', `<div class="crop-instructions"><strong>拖动鼠标框住色号和数量</strong><span>只需要保留图例表格，不要把主体图案和坐标网格框进去。</span></div><div class="legend-crop-viewport"><div id="legend-crop-stage" class="legend-crop-stage"><img src="${esc(state.legendCropUrl)}" alt="待框选图纸" draggable="false"><div id="legend-crop-box" class="legend-crop-box" hidden></div></div></div>`, `<button class="btn btn-secondary" data-action="close-modal">取消</button><button class="btn btn-primary" data-action="confirm-legend-crop" disabled>识别框选区域</button>`, true);
+}
+
+function updateLegendCropBox() {
+  const box=document.querySelector('#legend-crop-box'), rect=state.legendCropRect;
+  if (!box || !rect) return;
+  box.hidden=false; box.style.left=`${rect.x*100}%`; box.style.top=`${rect.y*100}%`;
+  box.style.width=`${rect.w*100}%`; box.style.height=`${rect.h*100}%`;
+  const confirm=document.querySelector('[data-action="confirm-legend-crop"]');
+  if (confirm) confirm.disabled=rect.w<.02 || rect.h<.02;
+}
 
 function parseItems(text) {
   const map = new Map();
@@ -419,6 +467,11 @@ document.addEventListener('click', async event => {
     if (action === 'modal-backdrop' && event.target === target) closeModal();
     if (action === 'inventory-series') { state.inventorySeries=target.dataset.value; renderPage(); }
     if (action === 'open-transaction') openTransaction(target.dataset.operation, target.dataset.code || '');
+    if (action === 'starter-kit') {
+      if (!confirm('确认入库一套 221 色新手套装？每个色号增加 1,000 粒，共增加 221,000 粒。')) return;
+      await api('/api/inventory/starter-kit',{method:'POST',json:{confirm:'ADD_221_KIT'}});
+      toast('221 色套装已入库，每个色号增加 1,000 粒'); await navigate(state.page==='workbench'?'workbench':'inventory');
+    }
     if (action === 'submit-transaction') document.querySelector('#transaction-form')?.requestSubmit();
     if (action === 'open-blueprint-editor') blueprintEditor();
     if (action === 'submit-blueprint') document.querySelector('#blueprint-form')?.requestSubmit();
@@ -481,6 +534,14 @@ document.addEventListener('click', async event => {
     }
     if (action === 'save-generator') generatorSaveDialog();
     if (action === 'submit-generator-save' && !state.generatorSaving) document.querySelector('#generator-save-form')?.requestSubmit();
+    if (action === 'confirm-legend-crop') {
+      if (!state.legendCropFile || !state.legendCropRect) throw new Error('请先框选图例区域');
+      target.disabled=true; target.innerHTML='<span class="spinner"></span>正在裁剪';
+      const selected=await cropImageFile(state.legendCropFile,state.legendCropRect);
+      const original=state.legendCropFile;
+      clearLegendCrop(); modalRoot.innerHTML=''; state.generatorFile=original;
+      await analyzeGeneratorFile(selected,'legend');
+    }
     if (action === 'export-pattern') await exportPattern();
     if (action === 'initialize-inventory') {
       const quantity = prompt('请输入每个色号的初始数量：','1000');
@@ -503,6 +564,9 @@ document.addEventListener('click', async event => {
     if (action === 'reanalyze-blueprint') {
       target.disabled=false; target.textContent='重新识别';
     }
+    if (action === 'confirm-legend-crop') {
+      target.disabled=false; target.textContent='识别框选区域';
+    }
     toast(error.message,'error');
   }
 });
@@ -521,11 +585,46 @@ document.addEventListener('change', async event => {
     const file = event.target.files[0];
     if (file) document.querySelector('#transaction-form textarea[name="items"]').value = await file.text();
   }
-  if (event.target.closest('#generator-form') && event.target.name === 'recognitionMode') state.generatorMode=event.target.value;
+  if (event.target.closest('#generator-form') && event.target.name === 'recognitionMode') {
+    state.generatorMode=event.target.value;
+    const hint=document.querySelector('#generator-file-name');
+    if (hint) hint.textContent=`${state.generatorMode==='legend'?'选择后框选图例区域':'选择后自动提取主体'} · 最大 ${state.session.maxUploadMb || 8}MB`;
+  }
   if (event.target.closest('#generator-form') && event.target.name === 'image') {
     const file=event.target.files[0], label=document.querySelector('#generator-file-name');
-    if (file && label) { label.textContent=`已选择：${file.name}`; event.target.form.requestSubmit(); }
+    if (file && label) {
+      label.textContent=`已选择：${file.name}`;
+      try {
+        const optimized=await optimizeUpload(file); state.generatorFile=optimized;
+        if (state.generatorMode==='legend') openLegendCropDialog(optimized);
+        else await analyzeGeneratorFile(optimized,'pattern');
+      } catch (error) { state.generatorBusy=false; toast(error.message,'error'); renderPage(); }
+    }
   }
+});
+
+document.addEventListener('pointerdown', event => {
+  const stage=event.target.closest('#legend-crop-stage');
+  if (!stage) return;
+  event.preventDefault(); const bounds=stage.getBoundingClientRect();
+  const x=Math.min(1,Math.max(0,(event.clientX-bounds.left)/bounds.width));
+  const y=Math.min(1,Math.max(0,(event.clientY-bounds.top)/bounds.height));
+  state.legendCropDrag={pointerId:event.pointerId,stage,startX:x,startY:y}; state.legendCropRect={x,y,w:0,h:0};
+  stage.setPointerCapture?.(event.pointerId); updateLegendCropBox();
+});
+
+document.addEventListener('pointermove', event => {
+  const drag=state.legendCropDrag;
+  if (!drag || drag.pointerId!==event.pointerId) return;
+  event.preventDefault(); const bounds=drag.stage.getBoundingClientRect();
+  const x=Math.min(1,Math.max(0,(event.clientX-bounds.left)/bounds.width));
+  const y=Math.min(1,Math.max(0,(event.clientY-bounds.top)/bounds.height));
+  state.legendCropRect={x:Math.min(drag.startX,x),y:Math.min(drag.startY,y),w:Math.abs(x-drag.startX),h:Math.abs(y-drag.startY)};
+  updateLegendCropBox();
+});
+
+document.addEventListener('pointerup', event => {
+  if (state.legendCropDrag?.pointerId===event.pointerId) state.legendCropDrag=null;
 });
 
 document.addEventListener('click', event => {
@@ -575,15 +674,8 @@ document.addEventListener('submit', async event => {
     if (form.id === 'generator-form') {
       if (state.generatorBusy) return;
       const fd=new FormData(form), rawFile=fd.get('image');
-      state.generatorMode=String(fd.get('recognitionMode') || 'legend');
-      state.generatorBusy=true; renderPage();
-      try {
-        state.generatorFile=await optimizeUpload(rawFile);
-        fd.set('image',state.generatorFile); fd.set('dither','false');
-        const result=await api('/api/analyze',{method:'POST',body:fd});
-        state.generatorResult=result.result; toast(result.message);
-      } finally { state.generatorBusy=false; }
-      renderPage();
+      const mode=String(fd.get('recognitionMode') || 'legend'); state.generatorFile=await optimizeUpload(rawFile);
+      if (mode==='legend') openLegendCropDialog(state.generatorFile); else await analyzeGeneratorFile(state.generatorFile,'pattern');
     }
     if (form.id === 'generator-save-form') {
       if (state.generatorSaving) return;
@@ -630,7 +722,7 @@ async function exportPattern() {
 }
 
 function adminImportDialog() {
-  openModal('迁移旧版数据', `<div class="notice warn">仅导入库存和图纸，不导入旧访问 IP 或访客记录。重复执行会覆盖库存，请确认文件来自旧版备份。</div><form id="admin-import-form" style="margin-top:16px"><label class="field"><span>旧版 JSON 备份</span><input type="file" name="file" accept="application/json,.json" required></label><label class="check-line"><input type="checkbox" name="replace" required>我确认用备份数量覆盖当前库存</label></form>`, `<button class="btn btn-secondary" data-action="close-modal">取消</button><button class="btn btn-primary" data-action="submit-admin-import">开始迁移</button>`);
+  openModal('导入数据备份', `<div class="notice warn">仅导入库存和图纸。重复执行会覆盖当前库存，请确认文件内容无误。</div><form id="admin-import-form" style="margin-top:16px"><label class="field"><span>JSON 备份文件</span><input type="file" name="file" accept="application/json,.json" required></label><label class="check-line"><input type="checkbox" name="replace" required>我确认用备份数量覆盖当前库存</label></form>`, `<button class="btn btn-secondary" data-action="close-modal">取消</button><button class="btn btn-primary" data-action="submit-admin-import">开始导入</button>`);
 }
 
 async function submitLegacyImport(form) {
@@ -638,7 +730,7 @@ async function submitLegacyImport(form) {
   const raw=JSON.parse(await file.text());
   const sanitized={inventory:(raw.inventory||[]).map(item=>({id:item.id,quantity:item.quantity})),blueprints:(raw.blueprints||[]).map(bp=>({id:bp.id,name:bp.name,tag:bp.tag,source:bp.source,status:bp.status,image:bp.image,items:bp.items}))};
   const result=await api('/api/admin/import-legacy',{method:'POST',json:{confirm:'IMPORT',data:sanitized}});
-  toast(`迁移完成：${result.inventoryCount} 个色号、${result.blueprintCount} 张图纸`); closeModal(); await navigate('dashboard');
+  toast(`导入完成：${result.inventoryCount} 个色号、${result.blueprintCount} 张图纸`); closeModal(); await navigate('dashboard');
 }
 
 async function exportAccount() {

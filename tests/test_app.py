@@ -10,7 +10,8 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["APP_SECRET"] = "test-secret-only"
 os.environ["APP_ENV"] = "development"
 
-from app import RATE_BUCKETS, User, VisitDaily, app, db, parse_legend_ocr  # noqa: E402
+from app import (Inventory, InventoryTransaction, RATE_BUCKETS, User, VisitDaily, app, db,
+                 parse_legend_ocr, prepare_owner_activity)  # noqa: E402
 
 
 class ProductionFlowTest(unittest.TestCase):
@@ -48,6 +49,20 @@ class ProductionFlowTest(unittest.TestCase):
         self.assertEqual(undo.status_code, 200, undo.get_json())
         quantities = {row["id"]: row["quantity"] for row in self.client.get("/api/inventory").get_json()["items"]}
         self.assertEqual(quantities["A1"], 0)
+
+    def test_221_color_starter_kit_adds_1000_to_every_color(self):
+        before = {row["id"]: row["quantity"] for row in self.client.get("/api/inventory").get_json()["items"]}
+        response = self.client.post("/api/inventory/starter-kit", headers=self.headers,
+                                    json={"confirm": "ADD_221_KIT"})
+        self.assertEqual(response.status_code, 200, response.get_json())
+        self.assertEqual(response.get_json()["colors"], 221)
+        self.assertEqual(response.get_json()["totalAdded"], 221000)
+        after = {row["id"]: row["quantity"] for row in self.client.get("/api/inventory").get_json()["items"]}
+        self.assertTrue(all(after[code] == quantity + 1000 for code, quantity in before.items()))
+        history = self.client.get("/api/inventory/history?limit=500").get_json()["items"]
+        kit_rows = [row for row in history if row["remark"] == "221 色新手套装"]
+        self.assertEqual(len(kit_rows), 221)
+        self.assertEqual(len({row["batchId"] for row in kit_rows}), 1)
 
     def test_csrf_and_cross_user_protection(self):
         rejected = self.client.post("/api/inventory/clear", json={"confirm": "CLEAR"})
@@ -201,6 +216,29 @@ class ProductionFlowTest(unittest.TestCase):
             os.environ.pop("OWNER_EMAIL", None)
         else:
             os.environ["OWNER_EMAIL"] = previous_owner
+
+    def test_owner_activity_seed_is_once_only_and_hides_migration_note(self):
+        with app.app_context():
+            user = User.query.filter_by(email=self.email).one()
+            user.is_admin = True
+            inventory = Inventory.query.filter_by(user_id=user.id, color_code="A1").one()
+            db.session.add(InventoryTransaction(
+                user_id=user.id, color_code="A1", operation="set", delta=0,
+                balance_after=inventory.quantity, remark="旧版数据迁移", source="migration",
+                batch_id=str(uuid.uuid4()),
+            ))
+            db.session.commit()
+            prepare_owner_activity(user)
+            db.session.commit()
+            first_count = InventoryTransaction.query.filter_by(user_id=user.id, source="activity").count()
+            prepare_owner_activity(user)
+            db.session.commit()
+            second_count = InventoryTransaction.query.filter_by(user_id=user.id, source="activity").count()
+            cleaned = InventoryTransaction.query.filter_by(user_id=user.id, color_code="A1").order_by(
+                InventoryTransaction.id.asc()).first()
+            self.assertEqual(first_count, 14)
+            self.assertEqual(second_count, first_count)
+            self.assertEqual(cleaned.remark, "初始库存")
 
     def test_password_reset_debug_flow(self):
         forgot = self.client.post("/api/auth/forgot-password", json={"email": self.email})

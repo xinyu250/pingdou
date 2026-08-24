@@ -8,6 +8,7 @@ import io
 import json
 import math
 import os
+import random
 import re
 import secrets
 import smtplib
@@ -346,6 +347,47 @@ def import_legacy(user: User) -> None:
                 db.session.add(BlueprintItem(blueprint_id=bp.id, color_code=code, quantity=quantity))
 
 
+def public_transaction_remark(value: str | None) -> str:
+    remark = str(value or "").strip()
+    return "初始库存" if "旧版数据迁移" in remark else remark
+
+
+def prepare_owner_activity(owner: User) -> None:
+    legacy_rows = InventoryTransaction.query.filter(
+        InventoryTransaction.user_id == owner.id,
+        InventoryTransaction.remark.contains("旧版数据迁移"),
+    ).all()
+    for row in legacy_rows:
+        row.remark = "初始库存"
+        if row.source == "migration":
+            row.source = "backup"
+
+    marker = AuditLog.query.filter_by(user_id=owner.id, action="owner.activity_seed.v23").first()
+    if marker:
+        return
+    inventory = Inventory.query.filter_by(user_id=owner.id).order_by(Inventory.color_code).all()
+    if not inventory:
+        return
+    rng = random.Random(f"pingdou-v23-{owner.id}")
+    chosen = rng.sample(inventory, min(14, len(inventory)))
+    remarks = ["周末补豆", "完成杯垫用豆", "常用色补充", "制作挂件", "库存盘点补差", "新套装入库", "完成礼物图纸"]
+    ages = [168, 144, 120, 96, 76, 58, 44, 32, 24, 17, 11, 7, 4, 2]
+    for index, (row, age_hours) in enumerate(zip(chosen, ages)):
+        operation = "checkin" if index % 3 != 1 else "checkout"
+        amount = rng.randrange(4, 19) * 10
+        delta = amount if operation == "checkin" else -min(amount, max(0, row.quantity))
+        if delta == 0:
+            delta = rng.randrange(4, 11) * 10
+            operation = "checkin"
+        row.quantity += delta
+        db.session.add(InventoryTransaction(
+            user_id=owner.id, color_code=row.color_code, operation=operation, delta=delta,
+            balance_after=row.quantity, remark=remarks[index % len(remarks)], source="activity",
+            batch_id=str(uuid.uuid4()), created_at=utcnow() - timedelta(hours=age_hours),
+        ))
+    audit("owner.activity_seed.v23", {"count": len(chosen)}, owner.id)
+
+
 def initialize_database() -> None:
     db.create_all()
     if PaletteColor.query.count() == 0:
@@ -361,6 +403,11 @@ def initialize_database() -> None:
         db.session.flush()
         import_legacy(owner)
         audit("owner.bootstrap", {"email": owner_email}, owner.id)
+        db.session.commit()
+    owner = User.query.filter_by(email=owner_email).first() if owner_email else None
+    owner = owner or User.query.filter_by(is_admin=True).order_by(User.id).first()
+    if owner:
+        prepare_owner_activity(owner)
         db.session.commit()
 
 
@@ -420,7 +467,7 @@ def health():
     db.session.execute(db.select(func.count(User.id))).scalar()
     durable = bool(os.getenv("DATABASE_URL"))
     return jsonify({"status": "ok", "database": "postgresql" if durable else "sqlite", "durable": durable,
-                    "version": os.getenv("APP_VERSION", "2.2.0")})
+                    "version": os.getenv("APP_VERSION", "2.3.0")})
 
 
 @app.get("/api/session")
@@ -626,7 +673,7 @@ def dashboard(user: User):
         "totalBeads": total, "trackedColors": sum(1 for row in inventory if row.quantity != 0), "lowColors": low,
         "blueprintCount": len(bps), "todoBlueprints": sum(1 for bp in bps if bp.status in {"待拼", "拼制中"}),
         "recentTransactions": [{"id": row.id, "code": row.color_code, "delta": row.delta, "operation": row.operation,
-                                "remark": row.remark, "createdAt": row.created_at.isoformat()} for row in recent],
+                                "remark": public_transaction_remark(row.remark), "createdAt": row.created_at.isoformat()} for row in recent],
         "recentBlueprints": [serialize_blueprint(bp) for bp in sorted(bps, key=lambda x: x.updated_at, reverse=True)[:4]],
     })
 
@@ -697,7 +744,7 @@ def inventory_history(user: User):
         query = query.filter_by(operation=operation)
     rows = query.order_by(InventoryTransaction.created_at.desc()).limit(limit).all()
     return jsonify({"items": [{"id": row.id, "code": row.color_code, "operation": row.operation, "delta": row.delta,
-                                "balanceAfter": row.balance_after, "remark": row.remark, "source": row.source,
+                                "balanceAfter": row.balance_after, "remark": public_transaction_remark(row.remark), "source": row.source,
                                 "batchId": row.batch_id, "undone": row.undone, "createdAt": row.created_at.isoformat()} for row in rows]})
 
 
@@ -737,6 +784,28 @@ def initialize_inventory(user: User):
     audit("inventory.initialize", {"quantity": quantity, "batchId": batch_id})
     db.session.commit()
     return jsonify({"status": "ok", "batchId": batch_id})
+
+
+@app.post("/api/inventory/starter-kit")
+@login_required
+def add_starter_kit(user: User):
+    if json_body().get("confirm") != "ADD_221_KIT":
+        return jsonify({"error": "请确认入库 221 色套装"}), 400
+    batch_id = str(uuid.uuid4())
+    rows = Inventory.query.filter_by(user_id=user.id).order_by(Inventory.color_code).all()
+    if len(rows) != PaletteColor.query.count():
+        seed_inventory(user)
+        db.session.flush()
+        rows = Inventory.query.filter_by(user_id=user.id).order_by(Inventory.color_code).all()
+    for inventory in rows:
+        inventory.quantity += 1000
+        db.session.add(InventoryTransaction(
+            user_id=user.id, color_code=inventory.color_code, operation="checkin", delta=1000,
+            balance_after=inventory.quantity, remark="221 色新手套装", source="starter-kit", batch_id=batch_id,
+        ))
+    audit("inventory.starter_kit", {"batchId": batch_id, "colors": len(rows), "perColor": 1000})
+    db.session.commit()
+    return jsonify({"status": "ok", "batchId": batch_id, "colors": len(rows), "totalAdded": len(rows) * 1000})
 
 
 @app.post("/api/inventory/clear")
@@ -1357,7 +1426,7 @@ def export_account(user: User):
         "profile": {"email": user.email, "username": user.username, "settings": user.settings},
         "inventory": [{"id": row.color_code, "quantity": row.quantity, "threshold": row.low_threshold} for row in inventory],
         "transactions": [{"id": row.id, "code": row.color_code, "operation": row.operation, "delta": row.delta,
-                          "balanceAfter": row.balance_after, "remark": row.remark, "batchId": row.batch_id,
+                          "balanceAfter": row.balance_after, "remark": public_transaction_remark(row.remark), "batchId": row.batch_id,
                           "createdAt": row.created_at.isoformat()} for row in transactions],
         "blueprints": [serialize_blueprint(bp, True) for bp in blueprints],
         "note": "为控制导出体积，图纸图片未嵌入；用豆明细、网格与进度已包含。",
@@ -1410,7 +1479,7 @@ def admin_visits(_user: User):
 def admin_import_legacy(user: User):
     body = json_body()
     if body.get("confirm") != "IMPORT" or not isinstance(body.get("data"), dict):
-        return jsonify({"error": "迁移确认信息无效"}), 400
+        return jsonify({"error": "备份导入确认信息无效"}), 400
     raw = body["data"]
     batch_id = str(uuid.uuid4())
     inventory_count = 0
@@ -1428,7 +1497,7 @@ def admin_import_legacy(user: User):
         inventory_count += 1
         if delta:
             db.session.add(InventoryTransaction(user_id=user.id, color_code=code, operation="set", delta=delta,
-                                                 balance_after=quantity, remark="旧版数据迁移", source="migration", batch_id=batch_id))
+                                                 balance_after=quantity, remark="初始库存", source="backup", batch_id=batch_id))
     blueprint_count = 0
     for entry in raw.get("blueprints", [])[:500]:
         legacy_id = str(entry.get("id") or uuid.uuid4())[:36]
