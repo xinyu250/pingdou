@@ -10,7 +10,7 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 os.environ["APP_SECRET"] = "test-secret-only"
 os.environ["APP_ENV"] = "development"
 
-from app import RATE_BUCKETS, User, app, db, parse_legend_ocr  # noqa: E402
+from app import RATE_BUCKETS, User, VisitDaily, app, db, parse_legend_ocr  # noqa: E402
 
 
 class ProductionFlowTest(unittest.TestCase):
@@ -209,6 +209,16 @@ class ProductionFlowTest(unittest.TestCase):
         self.assertTrue(token)
         reset = self.client.post("/api/auth/reset-password", json={"token": token, "password": "new-password-987"})
         self.assertEqual(reset.status_code, 200, reset.get_json())
+
+    def test_first_visit_tracking_initializes_daily_counters(self):
+        response = self.client.post("/api/visits", headers=self.headers, json={
+            "visitorId": f"browser-{uuid.uuid4()}", "durationSeconds": 17,
+        })
+        self.assertEqual(response.status_code, 200, response.get_json())
+        with app.app_context():
+            row = VisitDaily.query.order_by(VisitDaily.id.desc()).first()
+            self.assertGreaterEqual(row.total_visits, 1)
+            self.assertGreaterEqual(row.total_duration_seconds, 17)
 
     def test_account_export_and_delete(self):
         exported = self.client.get("/api/account/export")

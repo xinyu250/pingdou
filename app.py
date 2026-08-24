@@ -1388,8 +1388,8 @@ def track_visit():
         row = VisitDaily(day=date.today())
         db.session.add(row)
     hashes = set(json.loads(row.visitor_hashes_json or "[]"))
-    row.total_visits += 1
-    row.total_duration_seconds += duration
+    row.total_visits = (row.total_visits or 0) + 1
+    row.total_duration_seconds = (row.total_duration_seconds or 0) + duration
     hashes.add(digest)
     row.visitor_hashes_json = json.dumps(sorted(hashes))
     db.session.commit()
