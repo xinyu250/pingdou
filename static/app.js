@@ -409,10 +409,10 @@ document.addEventListener('click', async event => {
     if (action === 'navigate') { closeModal(); await navigate(target.dataset.page); }
     if (action === 'auth-mode') { state.authMode = target.dataset.mode; renderAuth(); }
     if (action === 'guest-login') {
-      target.disabled=true; target.textContent='正在准备游客空间…';
+      target.disabled=true; target.textContent='正在进入游客模式…';
       const result=await api('/api/auth/guest',{method:'POST'});
       state.csrf=result.csrfToken; state.session={authenticated:true,user:result.user,maxUploadMb:8};
-      toast('已进入独立游客空间'); await navigate('dashboard');
+      toast('已进入游客模式'); await navigate('dashboard');
     }
     if (action === 'logout') { await api('/api/auth/logout',{method:'POST'}); state.session={authenticated:false,user:null}; renderAuth(); }
     if (action === 'close-modal') closeModal();
